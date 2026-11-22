@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then echo "$unformatted"; exit 1; fi
+      - run: go vet ./...
+      - run: go test ./...
+      # Builder commits land on main without review; this re-checks them.
+      - name: Check apps and guardrails
+        run: go run ./cmd/appshome check
+      - name: Build for macOS
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -o /dev/null ./cmd/appshome
+          GOOS=darwin GOARCH=amd64 go build -o /dev/null ./cmd/appshome
+      - name: Shell syntax
+        run: for f in scripts/*.sh; do bash -n "$f"; done

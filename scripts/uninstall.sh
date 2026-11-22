@@ -13,4 +13,6 @@ done
 
 PREFIX="$(brew --prefix 2>/dev/null || echo /opt/homebrew)"
 rm -f "$PREFIX/bin/appshome"
+# This script may live in share/hearth; bash keeps reading its open file after deletion.
+rm -rf "$PREFIX/share/hearth"
 echo "Data kept at ${APPS_HOME_DATA:-$PREFIX/var/apps-home}. Delete it yourself if you want a clean slate."

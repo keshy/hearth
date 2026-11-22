@@ -107,6 +107,7 @@ The model is set in config (`gemini_model`, default `gemini-4-argon`; use
 
 ```sh
 make test        # unit tests, including a builder run against a fake Gemini
+make check       # what CI checks about apps/, guardrails/ and templates/
 make dev         # whole stack on ports 8080/8443, data in .dev-data/
 ```
 
@@ -119,23 +120,32 @@ to `/etc/hosts` and open `https://apps.home:8443` (admin password
 ## Installing on the home Mac
 
 ```sh
-git clone <this repo> ~/apps-home && cd ~/apps-home
-scripts/install.sh
+curl -fsSL https://github.com/keshy/hearth/releases/latest/download/install.sh | bash
 ```
 
-The installer is safe to re-run after `git pull` (that's how you update
-`appshome` itself; apps update on their own). It:
+That installs the latest release; no Go or checkout needed. Re-run it to
+update the platform (apps update on their own). `HEARTH_VERSION=v0.1.0` pins
+a release. From a checkout, `scripts/install.sh` builds from source instead
+and deploys from that checkout's `origin` remote. The installer:
 
-- installs Go and Caddy with Homebrew and builds `appshome`,
-- points the service at this checkout's `origin` remote (or serves the
-  checkout directly if there is no remote) and records your gcloud project,
+- installs Caddy with Homebrew (and Go, when building from source),
+- points the service at `git@github.com:keshy/hearth.git` (override with
+  `APPS_HOME_REPO_URL`; later runs keep whatever the config says) and
+  records your gcloud project,
 - asks for an admin password,
 - installs LaunchDaemons for Caddy, `appshome serve` and the DNS server,
 - offers to keep the Mac awake and restart it after power failures,
 - runs `appshome doctor`.
 
 The service pulls and the builder pushes without a prompt, so the Mac needs
-an SSH key without a passphrase (or a git credential helper) for the remote.
+an SSH key without a passphrase that can push to the repo, set up in
+`~/.ssh/config` for the user the service runs as:
+
+```
+Host github.com
+  IdentityFile ~/.ssh/p_github
+  IdentitiesOnly yes
+```
 
 Nothing machine-specific is in config: the LAN IP, interface and router are
 detected at runtime, and the DNS server restarts itself if the IP changes.
@@ -160,6 +170,25 @@ detected at runtime, and the DNS server restarts itself if the IP changes.
 | `appshome set-password` | Change the admin password |
 | `appshome init --flag value` | Change config (see `appshome init -h`) |
 | `appshome caddyfile` | Print the generated Caddy config |
+| `appshome check [--repo DIR]` | Validate app manifests and re-check generated apps against the guardrails |
+
+## CI and releases
+
+Every push and pull request runs `.github/workflows/ci.yml`: formatting,
+`go vet`, tests, `appshome check` (which also catches a builder commit that
+breaks the guardrails), a macOS build and a shell syntax check.
+
+To release the platform, push a tag:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` tests again, runs `scripts/release.sh`
+(bundles for Apple Silicon and Intel Macs plus `install.sh` and
+`checksums.txt`), and publishes a GitHub Release. Tags with a dash
+(`v0.2.0-rc1`) become pre-releases, which `latest` installs skip. App changes
+never need a release; they deploy from `main`.
 
 Data lives in `/opt/homebrew/var/apps-home` (`config.json`, `state.json`,
 `releases/`, `live/`, `appdata/`, `caddy/`, `logs/`). Build logs are in

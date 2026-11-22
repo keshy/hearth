@@ -168,7 +168,16 @@ func TestBuildCommitsPushesAndDeploys(t *testing.T) {
 		}
 	}
 
-	if _, err := registry.Load(filepath.Join(cfg.BuilderRepoDir(), "apps", "chores")); err != nil {
+	checkout := cfg.BuilderRepoDir()
+	if _, err := registry.Load(filepath.Join(checkout, "apps", "chores")); err != nil {
 		t.Errorf("committed manifest invalid: %v", err)
+	}
+	if p := CheckRepo(checkout); len(p) != 0 {
+		t.Errorf("CheckRepo on the builder's own output: %v", p)
+	}
+	os.WriteFile(filepath.Join(checkout, "apps", "chores", "lib", "data.js"), []byte("// edited"), 0o644)
+	os.WriteFile(filepath.Join(checkout, "apps", "chores", "x.html"), []byte(`<script>alert(1)</script>`), 0o644)
+	if p := CheckRepo(checkout)["chores"]; len(p) != 2 {
+		t.Errorf("CheckRepo should flag the edited platform file and the inline script, got %v", p)
 	}
 }

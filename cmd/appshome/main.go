@@ -24,6 +24,7 @@ Usage:
   appshome doctor       [--data DIR]          check every piece and print router settings
   appshome set-password [--data DIR]          set the admin password (user: admin)
   appshome caddyfile    [--data DIR]          print the generated Caddyfile
+  appshome check        [--repo DIR]          validate app manifests and generated apps (for CI)
   appshome version
 
 Default data dir: %s (override with --data or APPS_HOME_DATA)
@@ -51,6 +52,8 @@ func main() {
 		err = cmdSetPassword(args)
 	case "caddyfile":
 		err = cmdCaddyfile(args)
+	case "check":
+		err = cmdCheck(args)
 	case "version", "--version":
 		fmt.Println(version)
 	case "help", "-h", "--help":

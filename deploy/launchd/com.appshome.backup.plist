@@ -7,7 +7,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>__REPO__/scripts/backup-gcs.sh</string>
+    <string>__SHARE__/backup-gcs.sh</string>
     <string>__BUCKET__</string>
   </array>
   <key>EnvironmentVariables</key>
