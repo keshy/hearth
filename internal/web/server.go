@@ -38,6 +38,8 @@ type Server struct {
 	tmpl    *template.Template
 	log     *log.Logger
 	ctx     context.Context
+
+	llmLimit llmLimiter
 }
 
 func New(ctx context.Context, cfg config.Config, engine *deploy.Engine, health *Health, b *builder.Builder, reload func() error, logger *log.Logger) (*Server, error) {
@@ -82,6 +84,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /_api/builder/apps", s.builderApps)
 	api.HandleFunc("POST /_api/builder/jobs", s.builderStart)
 	api.HandleFunc("GET /_api/builder/jobs/{id}", s.builderJob)
+	api.HandleFunc("POST /_api/llm", s.llmAsk)
 
 	// Plain localhost calls from the appshome CLI.
 	internal := http.NewServeMux()

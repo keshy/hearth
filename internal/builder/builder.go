@@ -93,6 +93,19 @@ func (b *Builder) generator(ctx context.Context) (Generator, error) {
 	return g, nil
 }
 
+// Complete runs one JSON prompt on the builder's model client.
+func (b *Builder) Complete(ctx context.Context, system, prompt string) (string, error) {
+	g, err := b.generator(ctx)
+	if err != nil {
+		return "", err
+	}
+	c, ok := g.(Completer)
+	if !ok {
+		return "", errors.New("the configured model client can't answer prompts")
+	}
+	return c.Complete(ctx, system, prompt)
+}
+
 func (b *Builder) Start(req Request) (Job, error) {
 	req.Name = strings.ToLower(strings.TrimSpace(req.Name))
 	req.Prompt = strings.TrimSpace(req.Prompt)

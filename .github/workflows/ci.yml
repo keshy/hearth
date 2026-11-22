@@ -38,3 +38,7 @@ jobs:
         run: |
           node apps/naal/test/astro.test.mjs
           node apps/naal/test/festivals.test.mjs
+      - name: Astroscience planets, chart and reverse search
+        run: |
+          node apps/astroscience/test/planets.test.mjs
+          node apps/astroscience/test/chart.test.mjs

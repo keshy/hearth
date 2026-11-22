@@ -22,6 +22,11 @@ type Generator interface {
 	Generate(ctx context.Context, system string, turns []Turn) (string, error)
 }
 
+// Completer answers a single prompt with JSON text.
+type Completer interface {
+	Complete(ctx context.Context, system, prompt string) (string, error)
+}
+
 // ResolveProject finds the GCP project: config, then GOOGLE_CLOUD_PROJECT,
 // then the active gcloud configuration.
 func ResolveProject(cfg config.Config) string {
@@ -85,6 +90,24 @@ var outputSchema = &genai.Schema{
 		},
 	},
 	Required: []string{"title", "description", "files"},
+}
+
+// Complete answers one prompt with JSON, for apps with the llm capability.
+func (g *gemini) Complete(ctx context.Context, system, prompt string) (string, error) {
+	resp, err := g.client.Models.GenerateContent(ctx, g.model, genai.Text(prompt), &genai.GenerateContentConfig{
+		SystemInstruction: genai.NewContentFromText(system, genai.RoleUser),
+		ResponseMIMEType:  "application/json",
+		Temperature:       genai.Ptr[float32](0.3),
+		MaxOutputTokens:   8192,
+	})
+	if err != nil {
+		return "", err
+	}
+	text := resp.Text()
+	if text == "" {
+		return "", errors.New("the model returned an empty response")
+	}
+	return text, nil
 }
 
 func (g *gemini) Generate(ctx context.Context, system string, turns []Turn) (string, error) {

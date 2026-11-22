@@ -1,0 +1,9 @@
+title: Astroscience
+description: Learn Tamil astrology by playing with a real chart — houses, lords, aspects, dasha, yogas, a cheat sheet and a reverse search.
+kind: static
+icon: /icon.svg
+tags: [family, learning]
+# Only site/ is published; test/ holds the Swiss Ephemeris reference checks.
+output: site
+# The reverse search asks Gemini to turn a description into chart conditions.
+capabilities: [llm]

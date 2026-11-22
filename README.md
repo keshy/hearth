@@ -70,6 +70,36 @@ await save("items", [...items, { text: "milk" }]);
 Writes are last-write-wins, so reload right before saving. Data lives in
 `<data>/appdata/<app>/` on the Mac.
 
+### Asking Gemini from a static app
+
+A hand-written app can opt in to the house's Gemini with `capabilities: [llm]`
+in its `app.yaml`. It can then call its own `/_api/llm`:
+
+```js
+const res = await fetch("/_api/llm", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ system: "Reply with JSON only ...", prompt: text }),
+});
+const { text, model } = await res.json(); // text is the model's JSON reply
+```
+
+It uses the same Vertex AI setup as the App Builder (below). Limits: prompt
+4 KB, system prompt 24 KB, 20 calls per 10 minutes per app, 90 s timeout.
+Calls from other apps or other sites get 403, and generated apps can't ask
+for the capability. Apps should treat a failure (403/429/502/503) as "no
+model today" and fall back; `apps/astroscience` does.
+
+### The apps in this repo
+
+| App | What it is |
+| --- | --- |
+| `groceries` | Shared shopping list; the hand-written example of `/_api/data`. |
+| `naal` | Today in a Tamil home: panchangam computed in the browser, festivals, weekday prayers and music. |
+| `astroscience` | Learn Tamil astrology with a live chart: houses, lords, aspects, dasha, yogas, a cheat sheet, and a reverse search ("find a moment") that uses `/_api/llm`. |
+| `builder` | The App Builder. |
+| `router` | A link to the router's admin page. |
+
 ## The App Builder
 
 `https://builder.apps.home` (admin password) asks for a name and a description,

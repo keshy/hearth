@@ -29,8 +29,12 @@ const (
 
 const ManifestFile = "app.yaml"
 
-// CapBuilder lets an app call the builder API (/_api/builder).
-const CapBuilder = "builder"
+const (
+	// CapBuilder lets an app call the builder API (/_api/builder).
+	CapBuilder = "builder"
+	// CapLLM lets an app send prompts to the platform's model (/_api/llm).
+	CapLLM = "llm"
+)
 
 type App struct {
 	Name        string   `yaml:"-" json:"name"`
@@ -213,8 +217,11 @@ func (a *App) Clean() error {
 	if a.Generated && a.Kind != KindStatic {
 		return errors.New("generated apps must be static")
 	}
+	if a.Generated && len(a.Capabilities) > 0 {
+		return errors.New("generated apps can't request capabilities")
+	}
 	for _, c := range a.Capabilities {
-		if c != CapBuilder {
+		if c != CapBuilder && c != CapLLM {
 			return fmt.Errorf("unknown capability %q", c)
 		}
 	}
