@@ -125,6 +125,9 @@ func TestBuildCommitsPushesAndDeploys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if job.Log == nil {
+		t.Fatal("new job's log must encode as [], not null; the builder page maps over it")
+	}
 	j := waitJob(t, b, job.ID)
 	if j.Status != "done" {
 		t.Fatalf("job failed: %s\n%s", j.Error, strings.Join(j.Log, "\n"))

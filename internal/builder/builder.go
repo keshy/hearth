@@ -153,7 +153,7 @@ func (b *Builder) snapshot(j *Job) Job {
 
 func (b *Builder) snapshotLocked(j *Job) Job {
 	c := *j
-	c.Log = append([]string(nil), j.Log...)
+	c.Log = append([]string{}, j.Log...)
 	return c
 }
 

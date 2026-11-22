@@ -96,7 +96,7 @@ function showJob(job) {
   $("job-title").textContent = running
     ? `${job.revise ? "Changing" : "Building"} ${job.name}…`
     : job.status === "done" ? `${job.name} is live` : `${job.name} didn't build`;
-  $("log").replaceChildren(...job.log.map((line) => {
+  $("log").replaceChildren(...(job.log || []).map((line) => {
     const li = document.createElement("li");
     li.textContent = line;
     return li;
