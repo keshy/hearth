@@ -1,0 +1,11 @@
+# Written by the apps-home builder. Edit freely; revisions through the builder replace this folder.
+title: Sathya's Calendar Assistant
+description: Smart calendar assistant to manage Sathya's daily schedule, appointments, and reminders with quick natural-language entry.
+kind: static
+tags:
+    - calendar
+    - assistant
+    - schedule
+    - planner
+icon: /icon.svg
+generated: true

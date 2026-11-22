@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sathya's Calendar Assistant</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="back" id="portal-link" href="/">All apps</a>
+    <h1>Sathya's Assistant</h1>
+  </header>
+
+  <main class="page">
+    <!-- Assistant Briefing Card -->
+    <section class="card assistant-card">
+      <div class="briefing-top">
+        <div>
+          <span class="badge" id="today-date-badge">Today</span>
+          <h2 class="greeting" id="greeting-title">Hello, Sathya!</h2>
+          <p class="briefing-text" id="briefing-summary">Checking your schedule...</p>
+        </div>
+        <button type="button" id="toggle-manual-btn" class="ghost small-btn">+ Detailed Event</button>
+      </div>
+
+      <!-- Natural Language Quick Command Bar -->
+      <form id="quick-form" class="quick-form">
+        <label for="quick-input" class="sr-only">Tell the assistant what to schedule</label>
+        <div class="quick-input-wrap">
+          <input id="quick-input" name="command" autocomplete="off" placeholder="Try: &quot;Tomorrow 10am Dentist appointment&quot; or &quot;Friday 6pm Dinner with family&quot;" maxlength="180">
+          <button type="submit">Schedule</button>
+        </div>
+        <div id="quick-preview" class="quick-preview" hidden></div>
+      </form>
+
+      <div class="chips-row" aria-label="Quick examples">
+        <span class="chips-label">Quick fill:</span>
+        <button type="button" class="chip" data-template="Today 5pm Evening Walk">Today 5pm Walk</button>
+        <button type="button" class="chip" data-template="Tomorrow 10:30am Doctor Checkup">Tomorrow 10:30am Doctor</button>
+        <button type="button" class="chip" data-template="Saturday 11am Family Brunch">Saturday 11am Brunch</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- Detailed Event Form (Collapsible / Edit Modal) -->
+    <section class="card" id="event-form-card" hidden>
+      <div class="card-head">
+        <h2 id="form-heading">Add Event</h2>
+        <button type="button" id="close-form-btn" class="ghost small-btn">Close</button>
+      </div>
+      <form id="event-form" class="stack">
+        <input type="hidden" id="event-id">
+        <div class="field-grid">
+          <label class="field span-2">
+            <span>Event Title *</span>
+            <input id="event-title" required maxlength="120" placeholder="e.g., Yoga Class, Team Call">
+          </label>
+          <label class="field">
+            <span>Date *</span>
+            <input type="date" id="event-date" required>
+          </label>
+          <label class="field">
+            <span>Category</span>
+            <select id="event-category">
+              <option value="personal">Personal</option>
+              <option value="work">Work</option>
+              <option value="health">Health &amp; Wellness</option>
+              <option value="family">Family &amp; Social</option>
+              <option value="errand">Errand / Reminder</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Start Time</span>
+            <input type="time" id="event-start">
+          </label>
+          <label class="field">
+            <span>End Time</span>
+            <input type="time" id="event-end">
+          </label>
+          <label class="field">
+            <span>Repeat</span>
+            <select id="event-repeat">
+              <option value="none">Does not repeat</option>
+              <option value="daily">Every day</option>
+              <option value="weekly">Every week</option>
+              <option value="monthly">Every month</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Location</span>
+            <input id="event-location" maxlength="100" placeholder="Optional place or link">
+          </label>
+          <label class="field span-2">
+            <span>Notes for Sathya</span>
+            <textarea id="event-notes" rows="2" maxlength="300" placeholder="Things to bring, prep notes..."></textarea>
+          </label>
+        </div>
+        <div class="row form-actions">
+          <button type="submit" id="save-event-btn">Save to Calendar</button>
+          <button type="button" id="cancel-form-btn" class="ghost">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Main Layout: Calendar Grid + Selected Day / Agenda -->
+    <div class="split-layout">
+      <!-- Left Column: Month Calendar -->
+      <section class="card calendar-card">
+        <div class="cal-header">
+          <button type="button" id="prev-month-btn" class="ghost icon-btn" aria-label="Previous month">&larr;</button>
+          <div class="cal-title-group">
+            <h2 id="month-label" class="month-title">Month</h2>
+            <button type="button" id="jump-today-btn" class="link-btn">Jump to Today</button>
+          </div>
+          <button type="button" id="next-month-btn" class="ghost icon-btn" aria-label="Next month">&rarr;</button>
+        </div>
+
+        <div class="weekdays" aria-hidden="true">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="Monthly calendar"></div>
+      </section>
+
+      <!-- Right Column: Day View & Upcoming Agenda -->
+      <section class="card agenda-card">
+        <div class="tabs-bar">
+          <div class="tabs" role="tablist">
+            <button type="button" role="tab" id="tab-day" class="tab active" aria-selected="true">Selected Day</button>
+            <button type="button" role="tab" id="tab-upcoming" class="tab" aria-selected="false">Upcoming</button>
+            <button type="button" role="tab" id="tab-all" class="tab" aria-selected="false">All / Search</button>
+          </div>
+        </div>
+
+        <!-- Selected Day Header -->
+        <div id="day-header" class="day-header">
+          <div>
+            <h3 id="selected-date-title" class="selected-date-title">Today</h3>
+            <p id="selected-date-sub" class="muted-sub"></p>
+          </div>
+          <button type="button" id="add-for-day-btn" class="ghost small-btn">+ Add here</button>
+        </div>
+
+        <!-- Search & Filter Bar (Shown in All/Search or Upcoming) -->
+        <div id="filter-bar" class="filter-bar" hidden>
+          <label class="grow">
+            <span class="sr-only">Search events</span>
+            <input type="search" id="search-input" placeholder="Search title, notes, location...">
+          </label>
+          <label>
+            <span class="sr-only">Filter category</span>
+            <select id="filter-category">
+              <option value="all">All categories</option>
+              <option value="personal">Personal</option>
+              <option value="work">Work</option>
+              <option value="health">Health</option>
+              <option value="family">Family</option>
+              <option value="errand">Errand</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="conflict-banner" class="conflict-banner" hidden></div>
+
+        <ul id="event-list" class="event-list"></ul>
+        <p id="empty-state" class="empty" hidden>No events scheduled for this day. Enjoy the free time or add one above!</p>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
