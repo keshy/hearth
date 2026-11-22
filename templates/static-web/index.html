@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notes</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="back" id="portal-link" href="/">All apps</a>
+    <h1>Notes</h1>
+  </header>
+
+  <main class="page">
+    <section class="card">
+      <form id="add-form" class="row">
+        <label class="grow">
+          <span class="sr-only">New note</span>
+          <input id="note-input" name="note" autocomplete="off" placeholder="Write a note" required maxlength="200">
+        </label>
+        <button type="submit">Add</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>Everyone's notes</h2>
+      <ul id="list" class="list"></ul>
+      <p id="empty" class="empty" hidden>No notes yet. Add the first one above.</p>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

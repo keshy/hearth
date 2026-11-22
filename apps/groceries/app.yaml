@@ -1,0 +1,5 @@
+title: Groceries
+description: One shared shopping list for the whole house.
+kind: static
+icon: /icon.svg
+tags: [family, food]

@@ -1,0 +1,8 @@
+title: App Builder
+description: Describe an app in plain words; Gemini builds it and it goes live on apps.home.
+kind: static
+icon: /icon.svg
+tags: [tools]
+# Requires the admin password, and is the only app allowed to call /_api/builder.
+private: true
+capabilities: [builder]

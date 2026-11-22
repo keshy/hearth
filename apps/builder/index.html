@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Builder</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="back" id="portal-link" href="/">All apps</a>
+    <h1>App Builder</h1>
+    <span class="meta" id="info"></span>
+  </header>
+
+  <main class="page">
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="tab active" id="tab-new" aria-selected="true">New app</button>
+        <button type="button" role="tab" class="tab" id="tab-change" aria-selected="false">Change an app</button>
+      </div>
+
+      <form id="build-form">
+        <div id="new-fields">
+          <label for="name">Name <small>lowercase letters, digits and dashes</small></label>
+          <input id="name" maxlength="40" autocomplete="off" placeholder="chores">
+          <p class="hint">Address: <code id="preview">https://&lt;name&gt;</code></p>
+        </div>
+        <div id="change-fields" hidden>
+          <label for="existing">App</label>
+          <select id="existing"></select>
+          <p class="hint" id="no-apps" hidden>Nothing built with the builder yet.</p>
+        </div>
+
+        <label for="prompt" id="prompt-label">What should it do?</label>
+        <textarea id="prompt" rows="6" maxlength="4000"
+          placeholder="A weekly chore chart for two kids. Each chore has a name, who it belongs to and which days. Tapping a day marks it done; it resets every Sunday."></textarea>
+
+        <div class="row actions">
+          <button type="submit" id="submit">Build it</button>
+          <p class="hint">Goes live right away. Generated apps can only use their own files and shared app data.</p>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" id="job" hidden>
+      <h2 id="job-title">Building…</h2>
+      <ol class="log" id="log"></ol>
+      <p id="result" class="result" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2>Built with the builder</h2>
+      <ul class="list" id="apps"></ul>
+      <p class="empty" id="apps-empty" hidden>Nothing yet. Your first app will show up here.</p>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

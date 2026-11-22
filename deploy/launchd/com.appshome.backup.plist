@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.appshome.backup</string>
+  <key>UserName</key><string>__USER__</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__REPO__/scripts/backup-gcs.sh</string>
+    <string>__BUCKET__</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key><string>__HOME__</string>
+    <key>APPS_HOME_DATA</key><string>__DATA__</string>
+    <key>PATH</key><string>__PATH__</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>3</integer>
+    <key>Minute</key><integer>15</integer>
+  </dict>
+  <key>StandardOutPath</key><string>__DATA__/logs/backup.log</string>
+  <key>StandardErrorPath</key><string>__DATA__/logs/backup.log</string>
+</dict>
+</plist>

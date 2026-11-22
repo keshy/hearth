@@ -1,0 +1,48 @@
+{{template "head" .}}
+<header class="top">
+  <a class="brand" href="/"><img src="/static/icon.svg" alt="" width="22" height="22">{{.Domain}} deploys</a>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="{{.PortalURL}}">Open portal</a>
+  <form method="post" action="/deploy"><button class="btn">Deploy now</button></form>
+</header>
+<main>
+  {{if .Msg}}<div class="notice">{{.Msg}}</div>{{end}}
+  {{if .State.LastError}}<div class="notice error">Last sync failed: {{.State.LastError}}</div>{{end}}
+
+  <section class="summary">
+    <div><span class="sub">Source</span><div><code>{{.Source}}</code></div></div>
+    <div><span class="sub">Deployed commit</span><div>{{if .State.Commit.SHA}}<code>{{.State.Commit.Short}}</code> {{.State.Commit.Subject}}{{else}}none yet{{end}}</div></div>
+    <div><span class="sub">Deployed</span><div>{{ago .State.DeployedAt}}</div></div>
+    <div><span class="sub">Last checked</span><div>{{ago .State.CheckedAt}} <span class="sub">(every {{.Poll}}s)</span></div></div>
+  </section>
+
+  {{if .Problems}}
+  <h2>Manifest problems</h2>
+  <div class="notice error">{{range .Problems}}<div><code>{{.}}</code></div>{{end}}</div>
+  {{end}}
+
+  <h2>Apps</h2>
+  {{if .Rows}}
+  <table class="list">
+    <thead><tr><th></th><th>App</th><th>Type</th><th>Address</th><th>Release</th><th>Changed</th></tr></thead>
+    <tbody>
+    {{range .Rows}}
+      <tr>
+        <td><span class="dot {{.Status}}" title="{{.Status}}{{if .Detail}}: {{.Detail}}{{end}}"></span></td>
+        <td><b>{{.Title}}</b>{{if .Generated}} <span class="chip">builder</span>{{end}}{{if .Private}} <span class="chip">private</span>{{end}}{{if .Hidden}} <span class="chip">hidden</span>{{end}}
+          <div class="sub">apps/{{.Name}}</div>
+          {{if .State.Error}}<div class="err">{{.State.Error}} · <a href="/logs/{{.Name}}">build log</a></div>{{end}}</td>
+        <td><span class="kind">{{.Kind}}</span></td>
+        <td><a href="{{.URL}}" target="_blank" rel="noopener">{{.URL}}</a>{{if .Upstream}}<div class="sub">backend {{.Upstream}}{{if .APIPrefix}} for {{.APIPrefix}}{{end}}</div>{{end}}</td>
+        <td>{{if .Short}}<code>{{.Short}}</code> <a class="sub" href="/logs/{{.Name}}">log</a>{{else}}<span class="sub">n/a</span>{{end}}</td>
+        <td class="sub">{{ago .Updated}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="empty">Nothing deployed yet. Add a folder under <code>apps/</code> with an <code>app.yaml</code> and push.</p>
+  {{end}}
+</main>
+</body>
+</html>

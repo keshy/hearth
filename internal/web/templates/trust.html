@@ -1,0 +1,48 @@
+{{template "head" .}}
+<header class="top">
+  <a class="brand" href="{{.PortalURL}}"><img src="/static/icon.svg" alt="" width="22" height="22">{{.Domain}}</a>
+</header>
+<main class="narrow">
+  <h1>Trust this network</h1>
+  <p>Apps on <b>{{.Domain}}</b> use HTTPS certificates from a private authority that lives on the home server.
+     Install it once on each device and browsers stop showing warnings.</p>
+
+  {{if .HasCert}}
+  <p><a class="btn" href="/trust/root.crt">Download certificate</a></p>
+  <p class="sub">SHA-256 fingerprint: <code class="wrap">{{.Fingerprint}}</code></p>
+  {{else}}
+  <div class="notice error">The certificate authority hasn't been created yet. It appears after the first HTTPS request to the server; reload this page in a minute.</div>
+  {{end}}
+
+  <h2>Mac</h2>
+  <ol>
+    <li>Open the downloaded file. Keychain Access adds it to the <b>login</b> keychain.</li>
+    <li>Double-click <b>Caddy Local Authority</b>, expand <b>Trust</b>, and set <b>When using this certificate</b> to <b>Always Trust</b>.</li>
+  </ol>
+
+  <h2>iPhone and iPad</h2>
+  <ol>
+    <li>Open this page in Safari, tap <b>Download certificate</b>, then <b>Allow</b>.</li>
+    <li>Settings → Profile Downloaded → Install.</li>
+    <li>Settings → General → About → Certificate Trust Settings → turn on <b>Caddy Local Authority</b>.</li>
+  </ol>
+
+  <h2>Android</h2>
+  <ol>
+    <li>Download the file.</li>
+    <li>Settings → Security → More security settings → Encryption &amp; credentials → Install a certificate → CA certificate. Menu names vary by phone.</li>
+  </ol>
+
+  <h2>Windows</h2>
+  <ol>
+    <li>Open the downloaded file → Install Certificate → Local Machine.</li>
+    <li>Choose <b>Place all certificates in the following store</b> → Trusted Root Certification Authorities.</li>
+  </ol>
+
+  <h2>Firefox</h2>
+  <p>Settings → Privacy &amp; Security → Certificates → View Certificates → Authorities → Import, then tick “Trust this CA to identify websites”.</p>
+
+  <p><a class="btn ghost" href="{{.PortalURL}}">Go to the portal</a></p>
+</main>
+</body>
+</html>

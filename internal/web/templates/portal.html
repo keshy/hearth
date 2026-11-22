@@ -1,0 +1,40 @@
+{{template "head" .}}
+<header class="top">
+  <a class="brand" href="/"><img src="/static/icon.svg" alt="" width="22" height="22">{{.Domain}}</a>
+  <input id="q" type="search" placeholder="Search apps  ( / )" autocomplete="off" aria-label="Search apps">
+</header>
+<main>
+  {{if .Missing}}<div class="notice">There's no app called <b>{{.Missing}}</b> yet. Here's everything that exists.</div>{{end}}
+
+  {{if .Tags}}
+  <nav class="tags" id="tags">
+    <button class="tag active" data-tag="">All</button>
+    {{range .Tags}}<button class="tag" data-tag="{{.}}">{{.}}</button>{{end}}
+  </nav>
+  {{end}}
+
+  {{if .Recent}}
+  <section class="recent">
+    <h2>New this week</h2>
+    <div class="grid">{{range .Recent}}{{template "card" .}}{{end}}</div>
+  </section>
+  {{end}}
+
+  <section>
+    <h2>All apps</h2>
+    {{if .Apps}}
+    <div class="grid" id="all">{{range .Apps}}{{template "card" .}}{{end}}</div>
+    <p class="empty" id="nomatch" hidden>No apps match.</p>
+    {{else}}
+    <p class="empty">No apps yet. <a href="{{.AdminURL}}/new">Add the first one</a>.</p>
+    {{end}}
+  </section>
+</main>
+<footer>
+  <a href="{{.TrustURL}}">Seeing certificate warnings? Trust this network</a>
+  · <a href="{{.AdminURL}}">Admin</a>
+  · <a href="/api/apps">JSON</a>
+</footer>
+<script src="/static/portal.js"></script>
+</body>
+</html>

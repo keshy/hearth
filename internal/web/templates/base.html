@@ -1,0 +1,22 @@
+{{define "head"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{.PageTitle}}</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+</head>
+<body>
+{{end}}
+
+{{define "card"}}
+<a class="card" href="{{.URL}}" data-name="{{.Name}}" data-search="{{lower .Title}} {{lower .Description}} {{.Name}} {{join .Tags " "}}" data-tags="{{join .Tags ","}}">
+  <div class="icon"><span>{{.Initial}}</span>{{if .IconURL}}<img src="{{.IconURL}}" alt="" loading="lazy" onerror="this.remove()">{{end}}</div>
+  <div class="body">
+    <div class="title"><span class="dot {{.Status}}" title="{{.Status}}{{if .Detail}}: {{.Detail}}{{end}}"></span>{{.Title}}{{if .IsNew}}<span class="badge">new</span>{{end}}</div>
+    {{if .Description}}<p>{{.Description}}</p>{{end}}
+    <div class="meta">{{if eq (print .Kind) "link"}}<span class="kind">link</span>{{end}}{{range .Tags}}<span class="chip">{{.}}</span>{{end}}</div>
+  </div>
+</a>
+{{end}}

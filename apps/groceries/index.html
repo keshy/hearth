@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Groceries</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="back" id="portal-link" href="/">All apps</a>
+    <h1>Groceries</h1>
+  </header>
+
+  <main class="page">
+    <section class="card">
+      <form id="add-form" class="row">
+        <label class="grow">
+          <span class="sr-only">Item</span>
+          <input id="item" autocomplete="off" placeholder="Milk, eggs, coffee…" required maxlength="80">
+        </label>
+        <button type="submit">Add</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>To buy</h2>
+      <ul id="todo" class="list"></ul>
+      <p id="empty" class="empty" hidden>Nothing on the list. Add something above.</p>
+    </section>
+
+    <section class="card" id="done-card" hidden>
+      <div class="row">
+        <h2 class="grow">In the cart</h2>
+        <button type="button" class="ghost" id="clear">Clear</button>
+      </div>
+      <ul id="done" class="list"></ul>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
