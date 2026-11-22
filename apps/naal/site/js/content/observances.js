@@ -1,0 +1,342 @@
+// Short notes for each observance id produced by ../observances.js.
+// weight: 3 = major festival (gets the hero banner), 2 = notable, 1 = monthly.
+// songs are YouTube video IDs checked with test/youtube_search.py --check.
+
+const S = {
+  bilvashtakam: { title: "Bilvashtakam", by: "S. P. Balasubrahmanyam", id: "YPcocVXkuCA" },
+  lingashtakam: { title: "Lingashtakam", by: "S. P. Balasubrahmanyam", id: "AzTnnAfiqMg" },
+  rudram: { title: "Sri Rudram (Namakam)", by: "K. Suresh, The Ghanapati", id: "PbGBn14Q-TU" },
+  ganeshaPancharatnam: { title: "Ganesha Pancharatnam", by: "M. S. Subbulakshmi", id: "guZR2_MS5ec" },
+  agaval: { title: "Vinayagar Agaval", by: "M. S. Subbulakshmi", id: "H_aKytudu4k" },
+  kandaSashti: { title: "Kanda Sashti Kavasam", by: "Soolamangalam Sisters", id: "BRtBAwB3rIw" },
+  bhujangam: { title: "Subramanya Bhujangam", by: "Ranjani–Gayatri", id: "C-0hCiDfYHk" },
+  thiruppavai: { title: "Thiruppavai", by: "Maalola Kannan & Ranganathan", id: "W8Rvh87SJnE" },
+  thiruvempavai: { title: "Thiruvempavai", by: "Margazhi songs", id: "ri3fYgfMNQo" },
+  madhurashtakam: { title: "Madhurashtakam", by: "M. S. Subbulakshmi", id: "XE1ANx0go6E" },
+  bhavayami: { title: "Bhavayami Raghuramam", by: "M. S. Subbulakshmi", id: "zsnMOT3z7qc" },
+  yaKundendu: { title: "Ya Kundendu (Saraswati vandana)", by: "Rajshri Soul", id: "DySzqHwNCxU" },
+  lakshmiAshtakam: { title: "Lakshmi Ashtakam", by: "Bombay Sisters", id: "kk92IoScmcY" },
+  sriSuktam: { title: "Sri Suktam", by: "Vedic chant, with meaning", id: "r-HQ8MrQiDM" },
+  kanakadhara: { title: "Kanakadhara Stotram", by: "M. S. Subbulakshmi", id: "Jy7kEj6QP2w" },
+  aksharamanamalai: { title: "Arunachala Aksharamanamalai", by: "Unnikrishnan", id: "7nD3bbuFBFk" },
+  lalithaPancharatnam: { title: "Lalitha Pancharatnam", by: "Priya Sisters", id: "KUVF-9ZpR8Q" },
+  lalitha: { title: "Lalitha Sahasranamam", by: "Bombay Sisters", id: "nQI1TlAhhMo" },
+  aigiri: { title: "Aigiri Nandini", by: "Rajalakshmee Sanjay", id: "442ewPgXHQ0" },
+  karavalamba: { title: "Lakshmi Narasimha Karavalamba", by: "Bombay Sisters", id: "xMwVWwUUM4M" },
+  vishnuSahasranamam: { title: "Vishnu Sahasranamam", by: "M. S. Subbulakshmi", id: "ATflA6WOy0I" },
+  suprabhatam: { title: "Sri Venkatesa Suprabhatam", by: "M. S. Subbulakshmi", id: "R-bwYbOExt8" },
+  hanumanChalisa: { title: "Hanuman Chalisa", by: "M. S. Subbulakshmi", id: "Ipuh-P9NtuY" },
+  bhajaGovindam: { title: "Bhaja Govindam", by: "M. S. Subbulakshmi", id: "Go-mAJpH6_w" },
+  adityaHrudayam: { title: "Aditya Hrudayam", by: "Soolamangalam Sisters", id: "nSpxuxq5UhM" },
+  abirami: { title: "Abirami Anthathi", by: "Soolamangalam Sisters", id: "QfUizoZ98Qc" },
+  bhagyada: { title: "Bhagyada Lakshmi Baramma", by: "M. S. Subbulakshmi", id: "zmHsP1CN_aA" },
+};
+
+export const OBSERVANCES = {
+  // Monthly
+  ekadasi: {
+    name: "Ekadasi", ta: "ஏகாதசி", weight: 1, deity: "Perumal",
+    about: "The 11th day of the moon, sacred to Vishnu. Rice isn't eaten; many fast or keep to fruit and milk.",
+    do: ["Skip rice and grains", "Vishnu Sahasranamam", "Break the fast after sunrise tomorrow (dwadasi parana)"],
+    food: "Dwadasi tomorrow: agathi keerai, nellikai and sundaikai with the first meal",
+    songs: [S.vishnuSahasranamam],
+  },
+  pradosham: {
+    name: "Pradosham", ta: "பிரதோஷம்", weight: 1, deity: "Shiva and Nandi",
+    about: "The 13th day of the moon. In the twilight around sunset, Shiva danced between Nandi's horns after drinking the poison from the churning of the ocean.",
+    do: ["Visit a Shiva temple at sunset for Nandi abhishekam", "Offer vilvam", "Fast until the evening pooja"],
+    window: "sunset", songs: [S.lingashtakam, S.bilvashtakam],
+  },
+  amavasai: {
+    name: "Amavasai", ta: "அமாவாசை", weight: 1, deity: "Pitrus (ancestors)",
+    about: "New moon. A day to remember the family's ancestors with tarpanam. Follow your vadhyar and your family's custom.",
+    do: ["Tarpanam by those who perform it", "Feed crows before the family eats", "A simple meal, no onion or garlic"],
+    food: "Ellu (sesame), vazhakkai and pirandai are traditional",
+  },
+  pournami: {
+    name: "Pournami", ta: "பௌர்ணமி", weight: 1, deity: "Amman · Satyanarayana",
+    about: "Full moon. Families do Satyanarayana pooja; in Tiruvannamalai, thousands walk around the hill (girivalam).",
+    do: ["Satyanarayana pooja, or a lamp for Amman", "Look at the full moon together after sunset"],
+    food: "Sathyanarayana prasadam: rava kesari with banana", songs: [S.lalithaPancharatnam],
+  },
+  sankatahara: {
+    name: "Sankatahara Chathurthi", ta: "சங்கடஹர சதுர்த்தி", weight: 1, deity: "Pillaiyar",
+    about: "The 4th day after the full moon. \"Sankata-hara\" means remover of troubles. The fast ends at moonrise.",
+    do: ["Fast until moonrise", "Pray to Pillaiyar, then see the moon", "Offer kozhukattai or modakam"],
+    songs: [S.ganeshaPancharatnam, S.agaval],
+  },
+  sashti: {
+    name: "Sashti", ta: "சஷ்டி", weight: 1, deity: "Murugan",
+    about: "The 6th day of the bright half, Murugan's day each month.",
+    do: ["Kanda Sashti Kavasam", "Fast, or eat one meal"],
+    songs: [S.kandaSashti],
+  },
+  masa_sivaratri: {
+    name: "Masa Sivaratri", ta: "மாத சிவராத்திரி", weight: 1, deity: "Shiva",
+    about: "The night before each new moon is Shiva's night. Maha Shivaratri in Maasi is the biggest of the year.",
+    do: ["Om Namah Shivaya at night", "Bilva leaves for Shiva"],
+    songs: [S.bilvashtakam, S.rudram],
+  },
+  krithigai: {
+    name: "Krithigai", ta: "கிருத்திகை", weight: 1, deity: "Murugan",
+    about: "The Krittika star, under which Murugan was raised by the six Krittika maidens. A monthly Murugan day.",
+    do: ["Light lamps for Murugan", "Kanda Sashti Kavasam"], songs: [S.kandaSashti],
+  },
+  thiruvonam: {
+    name: "Thiruvonam", ta: "திருவோணம்", weight: 1, deity: "Perumal",
+    about: "Shravana, Perumal's own star: Oppiliappan and Tirupati Venkateswara are worshipped on this day.",
+    do: ["Light a lamp for Perumal", "Many keep a fast without salt"],
+    songs: [S.suprabhatam],
+  },
+  masa_pirappu: {
+    name: "Tamil Month Begins", ta: "மாதப் பிறப்பு", weight: 1,
+    about: "The sun moves into a new sign and a new Tamil month begins. Elders offer tarpanam.",
+    do: ["Light lamps at home", "Tarpanam by those who perform it"],
+  },
+
+  // Major festivals
+  puthandu: {
+    name: "Tamil Puthandu", ta: "தமிழ் புத்தாண்டு", weight: 3, deity: "Pillaiyar · family deity",
+    about: "Tamil New Year: Chithirai 1, when the sun enters Mesham. The panchangam for the new year is read out at home and in temples.",
+    do: ["Kani: see fruit, gold, a mirror and flowers first thing in the morning", "Read the new year's panchangam", "Visit the temple"],
+    food: "Maanga pachadi: sweet, sour, bitter, spicy, all of life's tastes in one dish", songs: [S.ganeshaPancharatnam],
+  },
+  chitra_pournami: {
+    name: "Chitra Pournami", ta: "சித்ரா பௌர்ணமி", weight: 2, deity: "Chitragupta",
+    about: "The Chithirai full moon, sacred to Chitragupta, who keeps the accounts of our good and bad deeds. Madurai holds the Meenakshi wedding festival around this time.",
+    do: ["Pray to Chitragupta", "Picnic in the moonlight, chitrannam on a riverbank"],
+    food: "Chitrannam: lemon, tamarind and coconut rices",
+  },
+  rama_navami: {
+    name: "Sri Rama Navami", ta: "ஸ்ரீ ராம நவமி", weight: 3, deity: "Sri Rama",
+    about: "Rama's birthday, at noon on the 9th day of Chaitra. Families read the Ramayanam and sing Thyagaraja's kritis.",
+    do: ["Rama pooja at noon", "Read a chapter of the Ramayanam with the children", "Sing Rama nama"],
+    food: "Panakam (jaggery-ginger cooler), neer mor and vadai paruppu", songs: [S.bhavayami],
+  },
+  akshaya_tritiya: {
+    name: "Akshaya Tritiya", ta: "அட்சய திருதியை", weight: 2, deity: "Lakshmi · Kubera",
+    about: "\"Akshaya\" means never decreasing: anything good begun or given today keeps growing. Sudama brought Krishna a handful of aval on this day.",
+    do: ["Give to someone in need (dhanam)", "Start something good", "Lakshmi pooja"],
+    food: "Aval (poha) payasam, for Sudama's gift", songs: [S.kanakadhara],
+  },
+  shankara_jayanthi: {
+    name: "Adi Shankara Jayanthi", ta: "சங்கர ஜயந்தி", weight: 2, deity: "Adi Shankaracharya",
+    about: "The birthday of Adi Shankara, who walked across India as a young man, teaching Advaita and composing stotrams we still sing.",
+    do: ["Recite Bhaja Govindam or Kanakadhara", "Tell the story of young Shankara and the crocodile"],
+    songs: [S.bhajaGovindam, S.kanakadhara],
+  },
+  narasimha_jayanthi: {
+    name: "Narasimha Jayanthi", ta: "நரசிம்ம ஜயந்தி", weight: 2, deity: "Narasimha",
+    about: "At dusk, Narasimha burst from a pillar to protect young Prahlada, the boy who never stopped believing.",
+    do: ["Pooja at sunset", "Tell the story of Prahlada"],
+    food: "Panakam and neer mor", songs: [S.karavalamba],
+  },
+  vaikasi_visakam: {
+    name: "Vaikasi Visakam", ta: "வைகாசி விசாகம்", weight: 2, deity: "Murugan",
+    about: "Murugan's birthday, under the Visakam star in Vaikasi.",
+    do: ["Visit a Murugan temple", "Kanda Sashti Kavasam"], songs: [S.kandaSashti, S.bhujangam],
+  },
+  aadi_perukku: {
+    name: "Aadi Perukku", ta: "ஆடிப் பெருக்கு", weight: 2, deity: "River Kaveri",
+    about: "On Aadi 18 the rivers swell with the monsoon. Families thank Kaveri Amma at the riverbank and pray for prosperity.",
+    do: ["Offer lamps, flowers and kolam at a river or tank", "Women tie a new yellow thread", "A picnic of mixed rices"],
+    food: "Chitrannam: lemon, tamarind, coconut and curd rice, plus sweet pongal",
+  },
+  aadi_pooram: {
+    name: "Aadi Pooram", ta: "ஆடிப் பூரம்", weight: 2, deity: "Andal · Amman",
+    about: "Andal's birthday: the little girl from Srivilliputhur who wrote the Thiruppavai and married Ranganatha. Amman temples hold a valaikappu with bangles.",
+    do: ["Offer bangles to Amman", "Sing a Thiruppavai pasuram"],
+    food: "Sakkarai pongal and paal payasam", songs: [S.thiruppavai],
+  },
+  aadi_amavasai: {
+    name: "Aadi Amavasai", ta: "ஆடி அமாவாசை", weight: 2, deity: "Pitrus",
+    about: "One of the three biggest days of the year to honour ancestors. Rameswaram and the Kaveri ghats are crowded with families.",
+    do: ["Tarpanam (follow your vadhyar)", "Feed crows, cows and people in need"],
+  },
+  aadi_velli: {
+    name: "Aadi Velli", ta: "ஆடி வெள்ளி", weight: 1, deity: "Amman",
+    about: "Every Friday of Aadi belongs to Amman. Temples fill with koozh, lamps and neem leaves.",
+    do: ["Amman temple visit", "Lalitha Sahasranamam"], food: "Koozh, maavilakku, sakkarai pongal",
+    songs: [S.lalitha],
+  },
+  varalakshmi: {
+    name: "Varalakshmi Vratam", ta: "வரலட்சுமி விரதம்", weight: 3, deity: "Varalakshmi",
+    about: "Lakshmi is invited into the home as a kalasam with a face of the goddess. Women tie the yellow nonbu saradu and pray for the family's welfare.",
+    do: ["Set up and decorate the kalasam on Thursday evening", "Pooja on Friday morning; tie the nonbu saradu", "Invite women for thamboolam"],
+    food: "Kozhukattai (sweet and savoury), vadai, payasam", songs: [S.sriSuktam, S.lakshmiAshtakam, S.bhagyada],
+  },
+  avani_avittam: {
+    name: "Avani Avittam", ta: "ஆவணி அவிட்டம்", weight: 3, deity: "Rishis",
+    about: "Upakarma: the yearly renewal of the sacred thread (poonal), and of the commitment to Vedic study. Rig and Sama Vedis may keep different dates; follow your vadhyar.",
+    do: ["Kamo-karsheet japam and a new poonal, with your vadhyar", "Rishi tarpanam", "Namaskaram to elders"],
+    food: "Idli, vadai, payasam: a festive breakfast after the ceremony",
+  },
+  gayatri_japam: {
+    name: "Gayatri Japam", ta: "காயத்ரி ஜபம்", weight: 2, deity: "Gayatri",
+    about: "The day after Avani Avittam: 1,008 rounds of Gayatri japam, done as your vadhyar or elders taught.",
+    do: ["Gayatri japam (1,008 times) in the morning"],
+  },
+  krishna_jayanthi: {
+    name: "Gokulashtami", ta: "கோகுலாஷ்டமி", weight: 3, deity: "Sri Krishna",
+    about: "Krishna's birthday at midnight. Little rice-flour footprints lead from the door into the pooja room as Krishna walks in.",
+    do: ["Draw the baby feet with rice flour", "Pooja at night", "Dress the children up as Krishna"],
+    food: "Seedai (uppu and vellam), murukku, aval, butter, curd: everything Krishna loves", songs: [S.madhurashtakam],
+  },
+  vinayaka_chaturthi: {
+    name: "Vinayaka Chaturthi", ta: "விநாயக சதுர்த்தி", weight: 3, deity: "Pillaiyar",
+    about: "Pillaiyar's birthday. A clay Pillaiyar comes home, gets a little umbrella and arugampul, and goes back to the water a few days later.",
+    do: ["Bring home a clay Pillaiyar", "Offer arugampul, erukkam poo and kozhukattai", "Don't look at the moon tonight!"],
+    food: "Modakam/kozhukattai (sweet and ellu), sundal, appam", songs: [S.ganeshaPancharatnam, S.agaval],
+  },
+  mahalaya_paksham: {
+    name: "Mahalaya Paksham", ta: "மஹாளய பட்சம்", weight: 1, deity: "Pitrus",
+    about: "The fortnight when ancestors are believed to visit. Tarpanam each day, or on the thithi of their passing.",
+    do: ["Daily or thithi tarpanam (follow your vadhyar)", "Avoid new purchases and celebrations"],
+  },
+  mahalaya_amavasai: {
+    name: "Mahalaya Amavasai", ta: "மஹாளய அமாவாசை", weight: 2, deity: "Pitrus",
+    about: "The most important day of the year for honouring ancestors. Tomorrow, Navaratri begins.",
+    do: ["Tarpanam (follow your vadhyar)", "Feed people in need"],
+  },
+  puratasi_sani: {
+    name: "Purattasi Saturday", ta: "புரட்டாசி சனி", weight: 2, deity: "Perumal (Venkateswara)",
+    about: "The Saturdays of Purattasi belong to Lord Venkateswara. Many homes keep the whole month vegetarian.",
+    do: ["Light a maavilakku (rice-flour and jaggery lamp)", "Venkatesa Suprabhatam", "Thaligai feast for Perumal"],
+    food: "Maavilakku, puliyodharai, sakkarai pongal, vadai", songs: [S.suprabhatam, S.vishnuSahasranamam],
+  },
+  navaratri: {
+    name: "Navaratri", ta: "நவராத்திரி", weight: 2, deity: "Durga · Lakshmi · Saraswati",
+    about: "Nine nights of the Goddess: three each for Durga, Lakshmi and Saraswati. The golu steps fill with dolls, and friends visit for thamboolam.",
+    do: ["Arrange the golu", "Sing a song each evening", "Invite friends for sundal and thamboolam"],
+    food: "A different sundal each night", songs: [S.aigiri, S.lalitha, S.lakshmiAshtakam],
+  },
+  saraswati_pooja: {
+    name: "Saraswati Pooja", ta: "சரஸ்வதி பூஜை", weight: 3, deity: "Saraswati",
+    about: "Books, instruments and tools are placed before Saraswati and left to rest for the day. Also Ayudha Pooja.",
+    do: ["Put books, instruments and tools before the Goddess", "Clean and decorate vehicles and tools", "No studying today!"],
+    food: "Sundal, sakkarai pongal, aval-vellam", songs: [S.yaKundendu],
+  },
+  vijayadasami: {
+    name: "Vijayadasami", ta: "விஜயதசமி", weight: 3, deity: "Durga · Saraswati",
+    about: "The day of victory: Durga defeats Mahishasura. The most auspicious day to start learning (vidyarambham): little ones write their first letters in rice.",
+    do: ["Take the books back with a small lesson", "Start a new art or lesson", "Put one doll in the golu to sleep"],
+    songs: [S.yaKundendu, S.aigiri],
+  },
+  deepavali: {
+    name: "Deepavali", ta: "தீபாவளி", weight: 3, deity: "Krishna · Lakshmi",
+    about: "Krishna defeats Narakasura. Before dawn, every home takes an oil bath: \"Ganga snanam aachaa?\". Then new clothes, sweets and crackers.",
+    do: ["Oil bath before sunrise (Ganga snanam)", "New clothes, namaskaram to elders", "Deepavali legiyam after the feast", "Lamps in the evening"],
+    food: "Mysore pak, adhirasam, murukku, ribbon pakoda, and the legiyam!", songs: [S.lakshmiAshtakam, S.madhurashtakam],
+  },
+  kanda_sashti: {
+    name: "Soorasamharam", ta: "சூரசம்ஹாரம்", weight: 3, deity: "Murugan",
+    about: "The sixth day of Kanda Sashti: at Thiruchendur by the sea, Murugan defeats Soorapadman with his vel.",
+    do: ["End the six-day fast", "Kanda Sashti Kavasam", "Watch the Soorasamharam"],
+    songs: [S.kandaSashti, S.bhujangam],
+  },
+  karthigai_somavaram: {
+    name: "Karthigai Somavaram", ta: "கார்த்திகை சோமவாரம்", weight: 2, deity: "Shiva",
+    about: "The Mondays of Karthigai, when Shiva temples bathe the lingam with water from 108 or 1,008 conches (sangabhishekam).",
+    do: ["Visit a Shiva temple", "Fast until evening"], songs: [S.rudram, S.lingashtakam],
+  },
+  karthigai_deepam: {
+    name: "Karthigai Deepam", ta: "கார்த்திகை தீபம்", weight: 3, deity: "Shiva · Murugan",
+    about: "At sunset, the Maha Deepam is lit on top of Tiruvannamalai, the hill that is Shiva as a column of fire. Every home glows with rows of agal vilakku.",
+    do: ["Light agal lamps everywhere at sunset", "A lamp at the door all night", "Arunachala Siva!"],
+    food: "Nel pori and aval pori urundai with jaggery, adai, appam", songs: [S.aksharamanamalai, S.kandaSashti],
+  },
+  margazhi: {
+    name: "Margazhi", ta: "மார்கழி", weight: 1, deity: "Perumal · Shiva",
+    about: "The month of devotion: big kolams before dawn, Thiruppavai and Thiruvempavai, and Chennai's music season.",
+    do: ["Wake early; draw a big kolam", "Sing today's Thiruppavai pasuram", "Pongal at the temple at dawn"],
+    food: "Ven pongal and sakkarai pongal: the temple prasadam", songs: [S.thiruppavai, S.thiruvempavai],
+  },
+  vaikunta_ekadasi: {
+    name: "Vaikunta Ekadasi", ta: "வைகுண்ட ஏகாதசி", weight: 3, deity: "Sri Ranganatha",
+    about: "The gate of Vaikuntam (Paramapada vaasal) opens at dawn in every Perumal temple. Devotees fast and stay awake through the night.",
+    do: ["Fast, and stay awake through the night", "Walk through the Paramapada vaasal at dawn", "Vishnu Sahasranamam"],
+    food: "Tomorrow (dwadasi): agathi keerai, nellikai and sundaikai to break the fast", songs: [S.vishnuSahasranamam, S.thiruppavai],
+  },
+  arudra_darisanam: {
+    name: "Arudra Darisanam", ta: "ஆருத்ரா தரிசனம்", weight: 3, deity: "Nataraja",
+    about: "Nataraja's cosmic dance under the Thiruvathirai star. Chidambaram holds the great darshan at dawn.",
+    do: ["Nataraja darshan at dawn", "Thiruvempavai"],
+    food: "Thiruvathirai kali and ezhu-kari kootu (seven-vegetable kootu)", songs: [S.thiruvempavai],
+  },
+  hanumath_jayanthi: {
+    name: "Hanumath Jayanthi", ta: "அனுமத் ஜயந்தி", weight: 3, deity: "Hanuman",
+    about: "Hanuman's birthday in Tamil Nadu: Margazhi amavasai under the Moolam star. Temples like Namakkal adorn him with butter and vadai maalai.",
+    do: ["Hanuman Chalisa", "Offer a vadai maalai or butter", "Tell the story of Hanuman's leap to Lanka"],
+    food: "Ulundhu vadai, sakkarai pongal", songs: [S.hanumanChalisa],
+  },
+  bhogi: {
+    name: "Bhogi", ta: "போகி", weight: 2, deity: "Indra",
+    about: "The day before Pongal: out with the old. Old things go into the bonfire, the house is cleaned, and kappu (neem, aavaram, sirupeelai) is tied at the door.",
+    do: ["Clean the house; tie the kappu", "Small bonfire with old things (mind the smoke)", "Kolam with cow-dung balls"],
+    food: "Poli, vadai, payasam",
+  },
+  pongal: {
+    name: "Thai Pongal", ta: "தைப் பொங்கல்", weight: 3, deity: "Surya",
+    about: "The harvest festival on Thai 1. Fresh rice is cooked in a new pot until it boils over, \"Pongalo pongal!\", and offered to the Sun.",
+    do: ["Cook pongal outside in a new pot, with turmeric and sugarcane", "Shout \"Pongalo pongal!\" as it boils over", "Offer it to Surya"],
+    food: "Sakkarai pongal, ven pongal, and a kootu of everything harvested", songs: [S.adityaHrudayam],
+  },
+  maattu_pongal: {
+    name: "Maattu Pongal · Kanu", ta: "மாட்டுப் பொங்கல் · கனு", weight: 2, deity: "Cows · brothers",
+    about: "Thanks to the cattle. In Brahmin homes, this is Kanu: sisters set out coloured rice for the crows and pray for their brothers' welfare.",
+    do: ["Kanu pidi: set out coloured rice on turmeric leaves for crows and birds", "Sisters pray for their brothers; brothers give gifts", "Feed and decorate cows"],
+    food: "Chitrannam: lemon, curd, coconut and sweet rices",
+  },
+  kaanum_pongal: {
+    name: "Kaanum Pongal", ta: "காணும் பொங்கல்", weight: 1,
+    about: "\"Kaanum\" means to visit: a day for meeting family, outings and picnics.",
+    do: ["Visit relatives", "A family outing"],
+  },
+  thai_amavasai: {
+    name: "Thai Amavasai", ta: "தை அமாவாசை", weight: 2, deity: "Pitrus",
+    about: "One of the three great days for honouring ancestors, along with Aadi and Mahalaya Amavasai.",
+    do: ["Tarpanam (follow your vadhyar)", "Feed crows and people in need"],
+  },
+  thai_velli: {
+    name: "Thai Velli", ta: "தை வெள்ளி", weight: 1, deity: "Amman · Lakshmi",
+    about: "The Fridays of Thai, the auspicious month after Pongal, belong to Amman.",
+    do: ["Lamp for Lakshmi/Amman", "Lalitha Sahasranamam"], songs: [S.lalitha],
+  },
+  thai_poosam: {
+    name: "Thai Poosam", ta: "தைப்பூசம்", weight: 3, deity: "Murugan",
+    about: "The day Parvati gave Murugan his vel. Devotees walk to Pazhani carrying kavadis.",
+    do: ["Visit a Murugan temple", "Kanda Sashti Kavasam"],
+    food: "Panchamirtham", songs: [S.kandaSashti, S.bhujangam],
+  },
+  ratha_saptami: {
+    name: "Ratha Saptami", ta: "ரத சப்தமி", weight: 2, deity: "Surya",
+    about: "The Sun turns his chariot north: Surya's birthday. Bathe with seven erukku leaves on your head.",
+    do: ["Bath with erukku leaves and a pinch of rice and turmeric", "Draw a chariot kolam and offer arghyam to the Sun", "Aditya Hrudayam"],
+    food: "Sakkarai pongal cooked in the sun's honour", songs: [S.adityaHrudayam],
+  },
+  maha_shivaratri: {
+    name: "Maha Shivaratri", ta: "மகா சிவராத்திரி", weight: 3, deity: "Shiva",
+    about: "The great night of Shiva. Families fast, and temples hold four abhishekams, one in each quarter of the night.",
+    do: ["Fast and stay awake through the night", "Om Namah Shivaya", "Visit the temple for the night poojas"],
+    songs: [S.rudram, S.lingashtakam, S.bilvashtakam],
+  },
+  masi_magam: {
+    name: "Masi Magam", ta: "மாசி மகம்", weight: 2, deity: "Shiva · Perumal",
+    about: "Temple deities are carried to the sea and rivers for a holy bath. Every 12 years it becomes the Mahamaham at Kumbakonam.",
+    do: ["Holy bath at a tank or the sea", "Temple visit"],
+  },
+  karadaiyan_nombu: {
+    name: "Karadaiyan Nombu", ta: "காரடையான் நோன்பு", weight: 3, deity: "Savitri · Gowri",
+    about: "Savitri won her husband Satyavan back from Yama. Women tie the nonbu saradu at the exact moment Maasi turns to Panguni.",
+    do: ["Tie the yellow nonbu saradu at the given time", "Offer karadai with a dab of butter"],
+    food: "Uruki vecha vennaiyum, oradaiyum nolben: sweet and salt adai with butter",
+  },
+  panguni_uthiram: {
+    name: "Panguni Uthiram", ta: "பங்குனி உத்திரம்", weight: 3, deity: "Divine weddings",
+    about: "The day of divine weddings: Shiva–Parvati, Murugan–Deivanai, Rama–Sita, Ranganatha–Andal. Also Sasta (Ayyappa)'s birthday.",
+    do: ["Visit a temple for the thirukalyanam", "Pray for happy marriages"], songs: [S.kandaSashti],
+  },
+};
+
+// Optional painted art in site/img; keys are observance ids.
+export const OBSERVANCE_ART = new Set(["karthigai_deepam", "margazhi", "pongal", "deepavali"]);

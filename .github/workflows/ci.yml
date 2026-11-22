@@ -31,3 +31,10 @@ jobs:
           GOOS=darwin GOARCH=amd64 go build -o /dev/null ./cmd/appshome
       - name: Shell syntax
         run: for f in scripts/*.sh; do bash -n "$f"; done
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Naal panchangam and festival dates
+        run: |
+          node apps/naal/test/astro.test.mjs
+          node apps/naal/test/festivals.test.mjs

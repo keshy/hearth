@@ -1,0 +1,322 @@
+:root {
+  --day: #d9480f;
+  --tint: #fff4e6;
+  --paper: #fbf7f0;
+  --ink: #2b2118;
+  --muted: #7a6a5a;
+  --card: #fffdf9;
+  --line: #eadfce;
+  --gold: #c99a2e;
+  --rahu: #e03131;
+  --yama: #495057;
+  --kuligai: #adb5bd;
+  --abhijit: #f2b705;
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, sans-serif;
+  --tamil: "Noto Serif Tamil", "Tamil Sangam MN", serif;
+  --deva: "Noto Sans Devanagari", "Kohinoor Devanagari", sans-serif;
+  color-scheme: light;
+}
+
+body.evening {
+  --paper: #15121d;
+  --ink: #f1e9dc;
+  --muted: #a99d8f;
+  --card: #1f1a2a;
+  --line: #342c42;
+  --kuligai: #6c6f75;
+  --yama: #8a8f96;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.55 var(--sans);
+  transition: background 0.6s, color 0.6s;
+}
+[lang="ta"], .ta { font-family: var(--tamil); }
+.deva { font-family: var(--deva); }
+h1, h2, h3 { font-family: var(--serif); line-height: 1.15; margin: 0; }
+h2 { font-size: 1.3rem; color: var(--day); }
+h3 { font-size: 1.1rem; margin: 0.4rem 0 0.5rem; }
+p { margin: 0.4rem 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: var(--day); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.2rem; }
+.note { font-size: 0.85rem; color: var(--muted); }
+
+/* Hero */
+.hero {
+  position: relative;
+  min-height: min(78vh, 600px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  color: #fff;
+  overflow: hidden;
+  background: var(--day);
+}
+.hero-art {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 70% 40%;
+  animation: drift 40s ease-in-out infinite alternate;
+}
+.hero-art:not([src]) { display: none; }
+@keyframes drift { from { transform: scale(1.02); } to { transform: scale(1.1) translateX(-2%); } }
+@media (prefers-reduced-motion: reduce) { .hero-art { animation: none; } }
+.hero-shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--day) 80%, #000) 0%, color-mix(in srgb, var(--day) 35%, transparent) 45%, transparent 70%),
+    linear-gradient(0deg, var(--paper) 0%, transparent 28%);
+}
+.topbar {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: max(0.8rem, env(safe-area-inset-top)) 1rem 0.8rem;
+  z-index: 2;
+}
+.home { color: #fff; text-decoration: none; opacity: 0.85; font-size: 0.9rem; }
+.nav { display: flex; gap: 0.35rem; align-items: center; }
+.nav button, .date-pick {
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-radius: 999px;
+  min-width: 2.2rem; height: 2.2rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.nav .pill { padding: 0 0.9rem; font-size: 0.85rem; }
+.nav .pill[aria-current="date"] { background: rgba(255, 255, 255, 0.92); color: var(--day); }
+.date-pick { position: relative; overflow: hidden; font-size: 0.95rem; }
+.date-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.hero-text {
+  position: relative; z-index: 1;
+  padding: 0 clamp(1.2rem, 5vw, 3.5rem) clamp(3rem, 8vh, 5rem);
+  max-width: 44rem;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+.eyebrow { font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.92; margin: 0; }
+.hero h1 { font-family: var(--tamil); font-size: clamp(3.4rem, 12vw, 6.5rem); font-weight: 700; line-height: 1.1; margin: 0.1rem 0; }
+.hero-en { font-family: var(--serif); font-size: clamp(1.2rem, 3.5vw, 1.7rem); margin: 0; }
+.hero-en small { font-family: var(--sans); font-size: 0.8rem; opacity: 0.85; margin-left: 0.4rem; letter-spacing: 0.04em; }
+.tagline { font-size: 1.05rem; max-width: 30rem; opacity: 0.95; }
+.art-caption {
+  position: absolute; right: 1rem; bottom: 2.2rem; z-index: 1;
+  font-size: 0.75rem; color: #fff; opacity: 0.8; margin: 0;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+.festival-ribbon {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  margin-top: 0.8rem; padding: 0.45rem 1rem 0.45rem 0.7rem;
+  background: rgba(255, 255, 255, 0.95); color: var(--day);
+  border-radius: 999px; font-weight: 600; text-shadow: none;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+.festival-ribbon[hidden] { display: none; }
+.festival-ribbon .ta { font-weight: 500; color: var(--muted); font-size: 0.9rem; }
+
+/* Layout */
+.page { max-width: 72rem; margin: -1.6rem auto 0; padding: 0 clamp(0.8rem, 3vw, 2rem) 2rem; position: relative; z-index: 2; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 1.3rem 1.4rem;
+  box-shadow: 0 1px 2px rgba(60, 40, 10, 0.04), 0 10px 30px -18px rgba(60, 40, 10, 0.25);
+}
+.cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr)); margin-top: 1rem; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.ghost {
+  background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  padding: 0.35rem 0.85rem; font-size: 0.85rem; color: var(--day);
+}
+.ghost:hover { background: var(--tint); }
+body.evening .ghost:hover { background: rgba(255, 255, 255, 0.06); }
+.ghost.small { font-size: 0.78rem; padding: 0.25rem 0.7rem; }
+
+/* Sky: arc, moon and panchangam */
+.sky {
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--day) 18%, transparent) 1.2px, transparent 1.6px) 0 0 / 18px 18px,
+    var(--card);
+}
+.sky-grid { display: grid; gap: 1.2rem; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; }
+@media (max-width: 760px) { .sky-grid { grid-template-columns: minmax(0, 1fr); } }
+body { overflow-x: hidden; }
+.arc-wrap { margin: 0; }
+#arc { width: 100%; height: auto; overflow: visible; }
+#arc text { font: 11px var(--sans); fill: var(--muted); }
+#arc .big { font: 600 13px var(--sans); fill: var(--ink); }
+.arc-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; justify-content: center; font-size: 0.75rem; color: var(--muted); }
+.sw { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 3px; margin-right: 0.3rem; vertical-align: -1px; }
+.sw.rahu { background: var(--rahu); } .sw.yama { background: var(--yama); }
+.sw.kuligai { background: var(--kuligai); } .sw.abhijit { background: var(--abhijit); }
+.panchang { display: grid; gap: 0.9rem; }
+.moon-row { display: flex; gap: 0.9rem; align-items: center; }
+#moon { width: 4.2rem; height: 4.2rem; flex: none; filter: drop-shadow(0 0 10px rgba(255, 230, 160, 0.45)); }
+.chip-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.45rem; }
+.chip-line strong { font-family: var(--serif); font-size: 1.15rem; }
+.chip-line .ta { color: var(--muted); font-size: 0.9rem; }
+.chip-line .until { font-size: 0.82rem; color: var(--muted); }
+.chip-line.next { opacity: 0.7; font-size: 0.92rem; }
+.chip-line.next strong { font-size: 0.98rem; }
+.times { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.9rem; margin: 0; font-size: 0.9rem; }
+.times dt { color: var(--muted); }
+.times dd { margin: 0; font-variant-numeric: tabular-nums; }
+.times .now { color: var(--day); font-weight: 600; }
+
+/* Festival cards */
+#festivals { display: grid; gap: 1rem; margin-top: 1rem; }
+#festivals:empty { display: none; }
+.fest {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.4rem;
+  border-left: 6px solid var(--day);
+  background: linear-gradient(110deg, var(--tint), var(--card) 60%);
+}
+body.evening .fest { background: linear-gradient(110deg, color-mix(in srgb, var(--day) 22%, var(--card)), var(--card) 60%); }
+.fest.minor { padding: 0.9rem 1.2rem; }
+.fest-head { display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; align-items: baseline; }
+.fest-head h2 { font-size: 1.45rem; }
+.fest.minor .fest-head h2 { font-size: 1.15rem; }
+.fest-head .ta { color: var(--muted); }
+.fest-when { font-size: 0.85rem; font-weight: 600; color: var(--day); }
+.fest ul { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+.fest .food { font-size: 0.92rem; }
+.fest .food::before { content: "🍚 "; }
+
+/* Week strip */
+.week { margin-top: 1rem; }
+.week ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.4rem; }
+.week button {
+  width: 100%; border: 1px solid var(--line); background: var(--card);
+  border-radius: 16px; padding: 0.5rem 0.2rem 0.45rem;
+  display: grid; justify-items: center; gap: 0.1rem;
+  transition: transform 0.15s;
+}
+.week button:hover { transform: translateY(-2px); }
+.week .wd { font-family: var(--tamil); font-size: 0.82rem; color: var(--c); }
+.week .dn { font-family: var(--serif); font-size: 1.25rem; font-weight: 600; }
+.week .mk { font-size: 0.62rem; color: var(--muted); height: 2.4em; overflow: hidden; text-align: center; line-height: 1.2; padding: 0 0.2rem; overflow-wrap: anywhere; }
+.week .wd { max-width: 100%; overflow: hidden; text-overflow: clip; white-space: nowrap; }
+@media (max-width: 520px) { .week .wd { font-size: 0.66rem; } .week ol { gap: 0.25rem; } }
+.week .sel { background: var(--c); border-color: var(--c); color: #fff; }
+.week .sel .wd, .week .sel .mk { color: #fff; }
+.week .is-today .dn { text-decoration: underline 2px; text-underline-offset: 4px; }
+
+/* The day */
+.badges { list-style: none; padding: 0; margin: 0.7rem 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.badges li { background: var(--tint); border-radius: 999px; padding: 0.25rem 0.75rem; font-size: 0.82rem; }
+body.evening .badges li { background: rgba(255, 255, 255, 0.07); }
+.badges b { font-weight: 600; color: var(--day); margin-right: 0.25rem; }
+details summary { cursor: pointer; color: var(--day); font-size: 0.92rem; margin-top: 0.4rem; }
+.fact { font-size: 0.92rem; border-top: 1px dashed var(--line); padding-top: 0.6rem; margin-top: 0.8rem; }
+.fact::before { content: "✨ Did you know? "; font-weight: 600; color: var(--day); }
+
+/* Story */
+.story #story-text { font-family: var(--serif); font-size: 1.05rem; line-height: 1.65; }
+.story #story-text::first-letter { font-size: 2.7em; float: left; line-height: 0.9; margin: 0.08em 0.1em 0 0; color: var(--day); font-weight: 700; }
+.moral { background: var(--tint); border-radius: 14px; padding: 0.55rem 0.9rem; font-size: 0.95rem; }
+body.evening .moral { background: rgba(255, 255, 255, 0.06); }
+.moral::before { content: "Moral · "; font-weight: 600; color: var(--day); }
+.speaking #story-text { background: linear-gradient(90deg, var(--tint), transparent); border-radius: 8px; }
+
+/* Kitchen */
+.plate { display: grid; gap: 0.7rem; }
+.plate h3 { font-family: var(--sans); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; }
+.plate ul { list-style: none; padding: 0; margin: 0.2rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.plate li {
+  border: 1px solid var(--line); border-radius: 14px; padding: 0.35rem 0.75rem; font-size: 0.9rem;
+  background: var(--card);
+}
+.plate .offer li { border-color: color-mix(in srgb, var(--day) 45%, var(--line)); background: var(--tint); }
+body.evening .plate .offer li { background: rgba(255, 255, 255, 0.06); }
+.plate .festive li { border-style: dashed; }
+
+/* Pooja */
+.steps { padding-left: 0; list-style: none; counter-reset: step; margin: 0.6rem 0; }
+.steps li { counter-increment: step; position: relative; padding: 0.3rem 0 0.3rem 2.2rem; cursor: pointer; }
+.steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 0.3rem;
+  width: 1.55rem; height: 1.55rem; border-radius: 50%; border: 1.5px solid var(--day);
+  color: var(--day); font-size: 0.8rem; display: grid; place-items: center;
+}
+.steps li.done { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.steps li.done::before { content: "✓"; background: var(--day); color: #fff; }
+.script-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.script-toggle button { border: 0; background: transparent; padding: 0.25rem 0.7rem; font-size: 0.8rem; }
+.script-toggle button[aria-pressed="true"] { background: var(--day); color: #fff; }
+.script-toggle button[data-script="deva"] { font-family: var(--deva); }
+.mantra { border-radius: 16px; background: var(--tint); padding: 0.8rem 1rem; margin: 0.6rem 0; }
+body.evening .mantra { background: rgba(255, 255, 255, 0.05); }
+.mantra .label { color: var(--day); }
+.mantra .verse { white-space: pre-line; font-size: 1.08rem; line-height: 1.7; margin: 0.2rem 0; }
+.mantra .verse.deva { font-size: 1.15rem; }
+.mantra .meaning { font-size: 0.86rem; color: var(--muted); font-style: italic; margin: 0.2rem 0 0; }
+.japa { display: flex; gap: 1rem; align-items: center; margin-top: 0.8rem; }
+.japa-ring {
+  position: relative; width: 7.5rem; height: 7.5rem; flex: none; border: 0; padding: 0; border-radius: 50%;
+  background: transparent; display: grid; place-items: center; touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.japa-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.japa-ring circle { fill: none; stroke-width: 9; }
+.japa-ring .track { stroke: var(--line); }
+.japa-ring .fill { stroke: var(--day); stroke-linecap: round; transition: stroke-dashoffset 0.25s; }
+.japa-ring:active { transform: scale(0.96); }
+.japa-count { font-family: var(--serif); font-size: 2rem; font-weight: 700; line-height: 1; margin-top: -0.5rem; }
+.japa-of { position: absolute; bottom: 1.9rem; font-size: 0.7rem; color: var(--muted); }
+.japa-mantra { font-size: 0.95rem; margin: 0; }
+.japa.pulse .japa-ring { animation: pulse 0.6s; }
+@keyframes pulse { 50% { transform: scale(1.08); } }
+
+/* Celebrate */
+.ticks { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.45rem; }
+.ticks li { padding-left: 1.6rem; position: relative; }
+.ticks li::before { content: "🪔"; position: absolute; left: 0; font-size: 0.95rem; }
+
+/* Listen */
+.songs { list-style: none; padding: 0; margin: 0.6rem 0 0; display: grid; gap: 0.5rem; }
+.songs a {
+  display: grid; grid-template-columns: 2.6rem 1fr; gap: 0.75rem; align-items: center;
+  text-decoration: none; color: inherit; border: 1px solid var(--line); border-radius: 16px; padding: 0.55rem 0.8rem;
+  transition: background 0.15s, transform 0.15s;
+}
+.songs a:hover { background: var(--tint); transform: translateX(3px); }
+body.evening .songs a:hover { background: rgba(255, 255, 255, 0.05); }
+.songs .play {
+  width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--day); color: #fff;
+  display: grid; place-items: center; font-size: 0.95rem;
+}
+.songs .featured .play { background: conic-gradient(from 0deg, var(--day), var(--gold), var(--day)); }
+.songs strong { display: block; font-weight: 600; font-size: 0.95rem; }
+.songs span.by { font-size: 0.8rem; color: var(--muted); }
+.songs .tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--day); margin-left: 0.3rem; }
+
+/* Upcoming */
+.upcoming { margin-top: 1rem; }
+.upcoming ol { list-style: none; padding: 0; margin: 0.6rem 0 0; display: grid; gap: 0.15rem; }
+.upcoming li button {
+  width: 100%; display: grid; grid-template-columns: 3.4rem 1fr auto; gap: 0.8rem; align-items: center;
+  background: transparent; border: 0; border-radius: 12px; padding: 0.45rem 0.5rem; text-align: left;
+}
+.upcoming li button:hover { background: var(--tint); }
+body.evening .upcoming li button:hover { background: rgba(255, 255, 255, 0.05); }
+.upcoming .date { display: grid; justify-items: center; line-height: 1.1; color: var(--c); }
+.upcoming .date b { font-family: var(--serif); font-size: 1.3rem; }
+.upcoming .date small { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.upcoming .names b { font-weight: 600; }
+.upcoming .names .minor { color: var(--muted); font-size: 0.88rem; }
+.upcoming .in { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.upcoming .w3 .names b { color: var(--day); }
+
+.foot { max-width: 72rem; margin: 0 auto; padding: 1rem clamp(0.8rem, 3vw, 2rem) 3rem; text-align: center; font-size: 0.9rem; color: var(--muted); }
+.foot-actions { display: flex; gap: 0.5rem; justify-content: center; }

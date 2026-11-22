@@ -1,0 +1,7 @@
+title: Naal · நாள்
+description: Today's day in a Tamil home — panchangam, festivals, a story, food, pooja and songs.
+kind: static
+icon: /icon.svg
+tags: [family]
+# Only site/ is published; test/ holds the Swiss Ephemeris reference checks.
+output: site
