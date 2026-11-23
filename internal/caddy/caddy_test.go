@@ -26,8 +26,9 @@ func TestRender(t *testing.T) {
 		`storage file_system "/data dir/caddy"`,
 		"apps.home, admin.apps.home {\n\treverse_proxy 127.0.0.1:7070 {\n\t\theader_up -X-Apps-Home-App",
 		"http://apps.home {",
+		"frame-ancestors https://builder.apps.home; base-uri",
 		`root * "/data dir/live/recipes"`,
-		"recipes.apps.home {\n\thandle /_api/* {\n\t\treverse_proxy 127.0.0.1:7070 {\n\t\t\theader_up X-Apps-Home-App recipes",
+		"recipes.apps.home {\n\t@platform path /_api/* /_hearth/*\n\thandle @platform {\n\t\treverse_proxy 127.0.0.1:7070 {\n\t\t\theader_up X-Apps-Home-App recipes",
 		"chores.apps.home {\n\theader Content-Security-Policy \"default-src 'self';",
 		"builder.apps.home {\n\tbasic_auth {\n\t\tadmin $2a$10$hash",
 		"nas.apps.home {\n\treverse_proxy https://192.168.0.5:5001 {",
@@ -43,5 +44,11 @@ func TestRender(t *testing.T) {
 	recipes := strings.SplitN(strings.SplitN(out, "recipes.apps.home {", 2)[1], "\n}\n", 2)[0]
 	if strings.Contains(recipes, "Content-Security-Policy") {
 		t.Error("hand-written apps should not get the generated-app CSP")
+	}
+}
+
+func TestGeneratedCSPWithoutBuilder(t *testing.T) {
+	if csp := GeneratedCSP(nil); !strings.Contains(csp, "frame-ancestors 'none'") {
+		t.Fatalf("with no builder, nothing may frame generated apps: %s", csp)
 	}
 }

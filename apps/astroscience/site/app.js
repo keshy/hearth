@@ -5,6 +5,7 @@ import {
 } from "./js/knowledge.js";
 import { CITIES, defaultCity, deviceZone, formatZoned, utcToZoned, zonedToUtc } from "./js/places.js";
 import { describe } from "./js/search.js";
+import { reading, tabTakeaway, storyFacts, STORY_SYSTEM } from "./js/reading.js";
 
 const $ = (id) => document.getElementById(id);
 const YEAR_MS = 365.25 * 86400000;
@@ -21,9 +22,13 @@ const state = {
   chart: null,
   dasha: null,
   dashaOpen: null,
-  tab: "planets",
+  tab: "reading",
   group: null,
   query: null,
+  reading: null,
+  tour: 0,
+  areaOrder: "rank",
+  stories: {},
 };
 
 if (location.hostname.split(".").length > 2) $("portal-link").href = `${location.protocol}//${location.host.split(".").slice(1).join(".")}/`;
@@ -131,6 +136,8 @@ function recompute({ keepSelection = true } = {}) {
   const ms = base + state.scrub * 60000;
   state.chart = analyze(ms, state.place, { nodeTrines: state.trines });
   state.dasha = dashaTimeline(ms, state.chart.planets.moon.lon);
+  state.reading = reading(state.chart, state.dasha, { name: $("f-name").value.trim() });
+  state.tour = Math.min(state.tour, state.reading.takeaways.length - 1);
   if (!keepSelection) state.selected = null;
   $("scrub-out").textContent = state.scrub
     ? `${state.scrub > 0 ? "+" : "−"}${Math.floor(Math.abs(state.scrub) / 60)}h ${String(Math.abs(state.scrub) % 60).padStart(2, "0")}m · ${formatZoned(ms, state.place.tz, { timeStyle: "short" })}`
@@ -167,7 +174,7 @@ function drawChart() {
   }
   root.append(defs);
   const lag = lagnaSign();
-  const sel = state.selected;
+  const sel = state.selected || tourStep()?.highlight || null;
   const aspected = new Set();
   if (sel?.kind === "planet" && state.mode === "rasi") for (const h of c.planets[sel.id].aspects) aspected.add((lag + h - 1) % 12);
   if (state.group) for (const h of HOUSE_GROUPS.find((x) => x.id === state.group).houses) aspected.add((lag + h - 1) % 12);
@@ -211,7 +218,7 @@ function drawChart() {
   root.append(svg("text", { x: 200, y: 192, "text-anchor": "middle", class: "center-sub" }, name || "this moment"));
   root.append(svg("text", { x: 200, y: 208, "text-anchor": "middle", class: "center-sub" }, formatZoned(c.ms, state.place.tz)));
   root.append(svg("text", { x: 200, y: 224, "text-anchor": "middle", class: "center-sub" }, state.place.name));
-  root.append(svg("text", { x: 200, y: 244, "text-anchor": "middle", class: "center-sub", fill: "#f2c94c" },
+  root.append(svg("text", { x: 200, y: 244, "text-anchor": "middle", class: "center-sub", style: "fill: var(--gold)" },
     `Lagna ${SIGNS[c.lagna.sign].en} · Moon ${SIGNS[c.planets.moon.sign].en} · ${c.star.name}`));
 
   if (state.lines && sel?.kind === "planet" && state.mode === "rasi") {
@@ -245,6 +252,48 @@ function select(s) {
 }
 
 // ---------- explain panel ----------
+function tourStep() {
+  return state.selected ? null : state.reading?.takeaways[state.tour];
+}
+
+function whyChips(t) {
+  return el("div", { class: "why" }, el("span", { class: "why-label", text: "Because" }), t.why.filter(Boolean).map((w) => el("span", { class: "why-chip", text: w })));
+}
+
+function learnButton(t) {
+  return el("button", {
+    type: "button", class: "ghost small learn",
+    onclick: () => {
+      showTab(t.learn.tab);
+      if (t.learn.select) select(t.learn.select);
+      document.querySelector(".tabs").scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+  }, `${t.learn.label} →`);
+}
+
+function renderTour() {
+  const r = state.reading;
+  const t = r.takeaways[state.tour];
+  const n = r.takeaways.length;
+  const name = $("f-name").value.trim();
+  $("ex-kicker").textContent = `${name ? `${name}'s chart` : "This chart"} · step ${state.tour + 1} of ${n} · ${t.kicker}`;
+  $("ex-title").textContent = t.title;
+  const go = (i) => { state.tour = Math.max(0, Math.min(n - 1, i)); drawChart(); renderExplain(); };
+  put($("ex-body"),
+    t.body.map((p) => el("p", { text: p })),
+    whyChips(t),
+    el("div", { class: "tour-nav" },
+      el("button", { type: "button", class: "ghost small", disabled: state.tour === 0 ? "" : null, onclick: () => go(state.tour - 1) }, "← Back"),
+      el("div", { class: "tour-dots", role: "tablist", "aria-label": "Steps" }, r.takeaways.map((x, i) => el("button", {
+        type: "button", class: "tour-dot", "aria-label": `Step ${i + 1}: ${x.kicker}`, "aria-current": i === state.tour ? "step" : null, onclick: () => go(i),
+      }))),
+      state.tour < n - 1
+        ? el("button", { type: "button", class: "primary small", onclick: () => go(state.tour + 1) }, "Next →")
+        : el("button", { type: "button", class: "primary small", onclick: () => { showTab("reading"); document.querySelector(".tabs").scrollIntoView({ behavior: "smooth" }); } }, "Full reading ↓")),
+    el("p", { class: "note tour-hint" }, learnButton(t), " The highlighted part of the chart is what this step is about. Tap any planet or house to explore it instead."),
+  );
+}
+
 function currentPeriod(ms = Date.now()) {
   const maha = state.dasha.periods.find((p) => p.start <= ms && ms < p.end);
   const sub = maha?.sub.find((p) => p.start <= ms && ms < p.end);
@@ -291,30 +340,10 @@ function renderExplain() {
     );
     return;
   }
-  $("ex-kicker").textContent = "Your chart in one minute";
-  $("ex-title").textContent = $("f-name").value.trim() ? `${$("f-name").value.trim()}'s jathagam` : "This moment's jathagam";
-  const ll = c.planets[c.lagnaLord];
-  const { maha, sub } = currentPeriod();
-  const strongest = [...ORDER.slice(0, 7)].sort((a, b) => c.planets[b].strength.score - c.planets[a].strength.score);
-  const present = c.yogas.filter((y) => y.present);
-  put(body, 
-    el("div", { class: "facts" },
-      fact("Lagnam (ascendant)", SIGNS[c.lagna.sign].en, `${SIGNS[c.lagna.sign].ta} · ${dms(c.lagna.lon)}`, () => select({ kind: "house", id: 1 })),
-      fact("Lagnadhipathi", GRAHAS[c.lagnaLord].en, `${GRAHAS[c.lagnaLord].ta} in the ${ordinal(ll.house)}`, () => select({ kind: "planet", id: c.lagnaLord })),
-      fact("Rasi (Moon sign)", SIGNS[c.planets.moon.sign].en, SIGNS[c.planets.moon.sign].ta, () => select({ kind: "planet", id: "moon" })),
-      fact("Nakshatram", c.star.name, `${c.star.sanskrit} · pada ${c.star.pada} · ${NAKSHATRAS[c.star.index][5]} gana`),
-      maha ? fact("Dasa now", `${GRAHAS[maha.lord].en} / ${GRAHAS[sub.lord].en}`, `${GRAHAS[maha.lord].ta} dasa, ${GRAHAS[sub.lord].ta} bhukti`, () => showTab("dasha")) : null,
-      fact("Moon phase", c.moonPhase.waxing ? "Waxing (valarpirai)" : "Waning (theipirai)", `thithi ${((c.moonPhase.tithi - 1) % 15) + 1}`)),
-    el("ul", {},
-      el("li", { text: `The lagnam is ${signLabel(c.lagna.sign)}, ruled by ${label(c.lagnaLord)}. That lord sits in the ${ordinal(ll.house)} house (${HOUSES[ll.house].en.toLowerCase()}), so life's energy leans toward ${HOUSES[ll.house].themes}.` }),
-      el("li", { text: `The Moon (mind) is in ${signLabel(c.planets.moon.sign)}, in the star ${c.star.name}: ${NAKSHATRAS[c.star.index][4]}. Its lord ${label(c.star.lord)} starts the dasha sequence: ${state.dasha.balanceYears.toFixed(1)} years of ${GRAHAS[c.star.lord].en} dasa remained at birth.` }),
-      el("li", { text: `Strongest: ${label(strongest[0])} (${DIGNITY[c.planets[strongest[0]].dignity].en.toLowerCase()}). Weakest: ${label(strongest.at(-1))} (${DIGNITY[c.planets[strongest.at(-1)].dignity].en.toLowerCase()}).` }),
-      el("li", { text: present.length ? `Yogas present: ${present.map((y) => y.name).join(", ")}.` : "No major yogas from the list are present." }),
-    ),
-    el("p", { class: "note", text: "Tap a planet or a house in the chart to see why it means what it means." }),
-  );
+  renderTour();
 }
 $("ex-clear").addEventListener("click", () => select(null));
+$("ex-clear").textContent = "Back to the reading";
 
 // ---------- tabs ----------
 function showTab(tab) {
@@ -326,8 +355,94 @@ function showTab(tab) {
 for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
 function renderTab() {
-  const fn = { planets: renderPlanets, houses: renderHouses, aspects: renderAspects, dasha: renderDasha, yogas: renderYogas, cheat: renderCheat, find: renderFind }[state.tab];
+  const fn = { reading: renderReading, areas: renderAreas, planets: renderPlanets, houses: renderHouses, aspects: renderAspects, dasha: renderDasha, yogas: renderYogas, cheat: renderCheat, find: renderFind }[state.tab];
   fn();
+  const line = tabTakeaway(state.tab, state.chart, state.reading);
+  if (line) $(`p-${state.tab}`).prepend(el("p", { class: "takeaway", text: line }));
+}
+
+// ---------- your reading ----------
+function renderReading() {
+  const r = state.reading;
+  const name = $("f-name").value.trim();
+  const cards = r.takeaways.map((t, i) => el("article", { class: "take" },
+    el("p", { class: "kicker", text: t.kicker }),
+    el("h3", { text: t.title }),
+    t.body.map((p) => el("p", { text: p })),
+    whyChips(t),
+    el("div", { class: "take-actions" },
+      el("button", { type: "button", class: "ghost small", onclick: () => { state.selected = null; state.tour = i; renderAll(); document.querySelector(".workbench").scrollIntoView({ behavior: "smooth" }); } }, "Show on the chart"),
+      learnButton(t))));
+  $("p-reading").replaceChildren(
+    el("div", { class: "card reading-head" },
+      el("p", { class: "kicker", text: name ? `${name}'s reading` : "The reading" }),
+      el("h2", { text: r.headline }),
+      el("p", { class: "lede", text: "Each card below is one thing this chart says, the evidence for it (\"because\"), and where in the app the rule is explained. Start at the top; it goes from who you are to what's happening now." }),
+      storyBlock()),
+    el("div", { class: "takes" }, cards));
+}
+
+function chartKey() {
+  return `${state.chart.ms}|${state.place.name}|${$("f-name").value.trim()}`;
+}
+
+function storyBlock() {
+  const key = chartKey();
+  const story = state.stories[key];
+  const box = el("div", { class: "story", id: "story" });
+  if (story?.paragraphs) {
+    box.append(el("h3", { text: `✨ ${story.title || "Your chart as a story"}` }), story.paragraphs.map((p) => el("p", { text: p })),
+      el("p", { class: "note", text: `Written by ${story.model || "Gemini"} from the facts above.` }));
+    return box;
+  }
+  const btn = el("button", { type: "button", class: "primary", disabled: story?.loading ? "" : null }, story?.loading ? "Writing…" : "✨ Tell it as a story");
+  btn.addEventListener("click", () => tellStory(key));
+  box.append(btn, el("span", { class: "note", text: story?.error ? ` ${story.error}` : " Gemini retells the cards above in plain words. Needs the home server's Gemini." }));
+  return box;
+}
+
+async function tellStory(key) {
+  state.stories[key] = { loading: true };
+  if (state.tab === "reading") renderTab();
+  try {
+    const facts = storyFacts(state.chart, state.reading, $("f-name").value.trim());
+    const res = await fetch("/_api/llm", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system: STORY_SYSTEM, prompt: JSON.stringify(facts) }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+    const out = JSON.parse(body.text);
+    if (!Array.isArray(out.paragraphs) || !out.paragraphs.length) throw new Error("the reply had no paragraphs");
+    state.stories[key] = { title: String(out.title || ""), paragraphs: out.paragraphs.map(String).slice(0, 6), model: body.model };
+  } catch (err) {
+    state.stories[key] = { error: `Couldn't write the story (${err.message}). The cards above say the same thing.` };
+  }
+  if (state.tab === "reading") renderTab();
+}
+
+function renderAreas() {
+  const c = state.chart;
+  const r = state.reading;
+  const rows = r.scores.slice(1).slice();
+  if (state.areaOrder === "rank") rows.sort((a, b) => b.score - a.score);
+  const sel = state.selected?.kind === "house" ? state.selected.id : null;
+  const items = rows.map((a) => el("button", {
+    type: "button", class: `area ${a.tone}${sel === a.house ? " sel" : ""}`, onclick: () => select({ kind: "house", id: a.house }),
+  },
+  el("div", { class: "area-top" },
+    el("span", { class: "area-n", text: String(a.house) }),
+    el("span", { class: "area-name" }, el("b", { text: HOUSES[a.house].en }), el("small", { text: ` ${HOUSES[a.house].ta}` })),
+    el("span", { class: `verdict ${a.tone}`, text: a.verdict })),
+  el("div", { class: "area-themes", text: HOUSES[a.house].themes }),
+  el("div", { class: "area-bar" }, el("span", { style: `width:${a.score * 10}%` })),
+  el("ul", { class: "area-why" }, a.reasons.map(([t, v]) => el("li", { class: v > 0 ? "up" : v < 0 ? "down" : null, text: t })))));
+  const seg = el("div", { class: "seg", role: "group", "aria-label": "Order" },
+    ["rank", "house"].map((o) => el("button", { type: "button", "aria-pressed": String(state.areaOrder === o), onclick: () => { state.areaOrder = o; renderTab(); } }, o === "rank" ? "Strongest first" : "House order")));
+  $("p-areas").replaceChildren(el("div", { class: "card" },
+    el("div", { class: "card-title" }, el("h2", { text: "Life areas: what comes easily, what takes work" }), seg),
+    el("p", { class: "lede", text: `Every house is a life area. Its score here (0–10) is a teaching guide, not a classical formula: it starts at 5, then rises or falls with the house lord's strength and placement, planets sitting in the house (benefics help; malefics hurt, except in the growth houses 3, 6, 10 and 11) and planets looking at it. Tap one to see it on the chart.` }),
+    el("div", { class: "areas" }, items)));
 }
 
 function renderPlanets() {
@@ -472,8 +587,8 @@ function miniWheel(g) {
   for (let h = 1; h <= 12; h++) {
     const [x, y] = pos(h);
     const on = offs.includes(h);
-    s.append(svg("circle", { cx: x, cy: y, r: 8, fill: h === 1 ? GRAHAS[g].color : on ? "rgba(242,201,76,.35)" : "rgba(255,255,255,.06)", stroke: "rgba(160,175,255,.3)" }));
-    s.append(svg("text", { x, y: y + 3, "text-anchor": "middle", "font-size": 8, fill: "#e9ecff" }, String(h)));
+    s.append(svg("circle", { cx: x, cy: y, r: 8, style: `fill:${h === 1 ? GRAHAS[g].color : on ? "var(--gold-mid)" : "var(--track)"};stroke:var(--line)` }));
+    s.append(svg("text", { x, y: y + 3, "text-anchor": "middle", "font-size": 8, style: `fill:${h === 1 ? "#fff" : "var(--ink)"}` }, String(h)));
     if (on) {
       const [x1, y1] = pos(h, 36);
       const [x0, y0] = pos(1, 36);

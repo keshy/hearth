@@ -18,10 +18,10 @@ function row(item) {
   const box = document.createElement("input");
   box.type = "checkbox";
   box.checked = item.done;
-  box.style.width = "24px";
   box.addEventListener("change", () => update((all) =>
     all.map((i) => (i.id === item.id ? { ...i, done: box.checked } : i))));
   const text = document.createElement("span");
+  text.className = "text";
   text.textContent = item.text;
   label.append(box, text);
   li.append(label);
@@ -34,6 +34,8 @@ function render() {
   $("todo").replaceChildren(...todo.map(row));
   $("done").replaceChildren(...done.map(row));
   $("empty").hidden = todo.length > 0;
+  $("todo-count").hidden = todo.length === 0;
+  $("todo-count").textContent = `${todo.length} to buy`;
   $("done-card").hidden = done.length === 0;
 }
 

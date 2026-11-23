@@ -40,6 +40,7 @@ type Server struct {
 	ctx     context.Context
 
 	llmLimit llmLimiter
+	errs     errorStore
 }
 
 func New(ctx context.Context, cfg config.Config, engine *deploy.Engine, health *Health, b *builder.Builder, reload func() error, logger *log.Logger) (*Server, error) {
@@ -66,6 +67,7 @@ func (s *Server) Handler() http.Handler {
 	portal.HandleFunc("GET /api/status", s.apiStatus)
 	portal.HandleFunc("GET /trust", s.trust)
 	portal.HandleFunc("GET /trust/root.crt", s.rootCert)
+	portal.HandleFunc("GET /icons/{name}", s.appIcon)
 
 	admin := http.NewServeMux()
 	admin.Handle("GET /static/", static)
@@ -84,6 +86,11 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /_api/builder/apps", s.builderApps)
 	api.HandleFunc("POST /_api/builder/jobs", s.builderStart)
 	api.HandleFunc("GET /_api/builder/jobs/{id}", s.builderJob)
+	api.HandleFunc("GET /_api/builder/apps/{name}", s.builderAppDetail)
+	api.HandleFunc("GET /_api/builder/apps/{name}/file", s.builderAppFile)
+	api.HandleFunc("POST /_api/builder/apps/{name}/diagnose", s.builderDiagnose)
+	api.HandleFunc("POST /_api/builder/apps/{name}/restore", s.builderRestore)
+	api.HandleFunc("DELETE /_api/builder/apps/{name}/errors", s.builderClearErrors)
 	api.HandleFunc("POST /_api/llm", s.llmAsk)
 
 	// Plain localhost calls from the appshome CLI.
@@ -92,12 +99,17 @@ func (s *Server) Handler() http.Handler {
 	internal.HandleFunc("POST /_internal/reload", s.internalReload)
 	internal.HandleFunc("GET /api/status", s.apiStatus)
 
+	// Theme and error reports, on every app host, the portal and the admin page.
+	hearth := s.hearthHandler()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "same-origin")
 		switch {
 		case r.Host == s.cfg.AppListen:
 			internal.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, "/_hearth/"):
+			hearth.ServeHTTP(w, r)
 		case r.Header.Get(caddy.AppHeader) != "":
 			api.ServeHTTP(w, r)
 		case hostOnly(r.Host) == s.cfg.AdminHost():
@@ -145,8 +157,8 @@ func (s *Server) view(a registry.App) appView {
 	}
 	switch {
 	case strings.HasPrefix(a.Icon, "/"):
-		if a.Kind != registry.KindLink {
-			v.IconURL = s.cfg.AppURL(a.Name) + a.Icon
+		if a.Kind != registry.KindLink && a.Kind != registry.KindProxied {
+			v.IconURL = "/icons/" + a.Name
 		}
 	case a.Icon != "":
 		v.IconURL = a.Icon

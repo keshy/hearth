@@ -5,16 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Groceries</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <script src="/_hearth/hearth.js"></script>
+  <link rel="stylesheet" href="/_hearth/theme.css">
+  <link rel="stylesheet" href="/_hearth/kit.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="bar">
     <a class="back" id="portal-link" href="/">All apps</a>
     <h1>Groceries</h1>
+    <button class="theme-toggle" data-hearth-theme-toggle></button>
   </header>
 
   <main class="page">
-    <section class="card">
+    <section class="card add">
       <form id="add-form" class="row">
         <label class="grow">
           <span class="sr-only">Item</span>
@@ -26,17 +30,20 @@
     </section>
 
     <section class="card">
-      <h2>To buy</h2>
-      <ul id="todo" class="list"></ul>
+      <div class="row head">
+        <h2 class="grow">To buy</h2>
+        <span class="chip accent" id="todo-count" hidden></span>
+      </div>
+      <ul id="todo" class="list items"></ul>
       <p id="empty" class="empty" hidden>Nothing on the list. Add something above.</p>
     </section>
 
     <section class="card" id="done-card" hidden>
-      <div class="row">
+      <div class="row head">
         <h2 class="grow">In the cart</h2>
-        <button type="button" class="ghost" id="clear">Clear</button>
+        <button type="button" class="ghost small" id="clear">Clear the cart</button>
       </div>
-      <ul id="done" class="list"></ul>
+      <ul id="done" class="list items done"></ul>
     </section>
   </main>
 

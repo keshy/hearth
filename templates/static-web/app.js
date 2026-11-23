@@ -20,10 +20,11 @@ function render() {
   list.replaceChildren(...notes.map((note) => {
     const li = document.createElement("li");
     const text = document.createElement("span");
+    text.className = "note-text";
     text.textContent = note.text;
     const del = document.createElement("button");
     del.type = "button";
-    del.className = "ghost";
+    del.className = "quiet small";
     del.textContent = "Remove";
     del.setAttribute("aria-label", `Remove ${note.text}`);
     del.addEventListener("click", () => removeNote(note.id));

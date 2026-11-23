@@ -5,6 +5,23 @@
   const nomatch = document.getElementById('nomatch');
   let tag = '';
 
+  document.querySelectorAll('.icon img').forEach((img) => {
+    const drop = () => img.remove();
+    if (img.complete && img.naturalWidth === 0) drop();
+    else img.addEventListener('error', drop);
+  });
+
+  const now = new Date();
+  const h = now.getHours();
+  const part = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const greet = document.getElementById('greeting');
+  const today = document.getElementById('today');
+  if (greet) greet.textContent = part;
+  if (today) {
+    const date = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    today.textContent = `${date} · ${today.textContent}`;
+  }
+
   function apply() {
     const term = (q.value || '').trim().toLowerCase();
     let shown = 0;

@@ -180,23 +180,6 @@ func (s *Server) builderInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) builderApps(w http.ResponseWriter, r *http.Request) {
-	if !s.builderApp(w, r) {
-		return
-	}
-	out := []map[string]any{}
-	for _, st := range s.engine.State().Apps {
-		if st.App.Generated {
-			out = append(out, map[string]any{
-				"name": st.App.Name, "title": st.App.Title, "description": st.App.Description,
-				"url": s.cfg.AppURL(st.App.Name), "status": st.Status, "updated": st.App.Updated,
-			})
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i]["name"].(string) < out[j]["name"].(string) })
-	writeJSON(w, http.StatusOK, out)
-}
-
 func (s *Server) builderStart(w http.ResponseWriter, r *http.Request) {
 	if !s.builderApp(w, r) {
 		return

@@ -456,10 +456,7 @@ function render() {
   const w = WEEKDAYS[p.weekday];
   const isToday = key === todayKey();
   const root = document.documentElement.style;
-  root.setProperty("--day", w.color);
-  root.setProperty("--tint", w.tint);
-  const now = Date.now();
-  document.body.classList.toggle("evening", isToday && (now >= p.sunset || now < p.sunrise));
+  root.setProperty("--day-base", w.color);
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", w.color);
 
   const list = obsFor(key);
@@ -559,10 +556,7 @@ setInterval(() => {
     return;
   }
   if (key === t) {
-    const p = panchang(key, place);
-    const now = Date.now();
-    document.body.classList.toggle("evening", now >= p.sunset || now < p.sunrise);
-    renderSky(p, true);
+    renderSky(panchang(key, place), true);
   }
 }, MIN);
 

@@ -28,9 +28,36 @@ that breaks a rule is rejected or simply won't run.
   frameworks, no TypeScript, no JSX.
 - Load scripts only as files: `<script type="module" src="app.js"></script>`.
 - Allowed file types: `.html .css .js .mjs .json .svg .txt .md .webmanifest`.
-- Start from the template below and keep its structure and design tokens
-  (the CSS variables in `style.css`). Change the content, not the look-and-feel
-  foundations, unless the request asks for a different style.
+- Start from the template below and keep its structure.
+
+## Look and feel (the house theme)
+
+Every app in the house shares one theme so they feel like one family and all
+follow the same light/dark setting. The platform serves it; you only link it.
+
+- Keep the template's `<head>` lines exactly: `/_hearth/hearth.js` (a plain
+  `<script src>`, not a module), then `/_hearth/theme.css`, `/_hearth/kit.css`,
+  then your `style.css`.
+- Keep the header: `.bar` with the `.back` link, the `<h1>`, and
+  `<button class="theme-toggle" data-hearth-theme-toggle></button>` last.
+- Give the app its own personality with an accent pair in `style.css`:
+  `:root { --accent-light: <colour that reads on light backgrounds>; --accent-dark: <lighter colour for dark> }`.
+- Use the theme's variables for every colour: `--bg --bg-2 --card --card-2
+  --fg --muted --faint --line --line-strong --accent --accent-fg --accent-soft
+  --ok --warn --danger --info` (each status colour also has a `-soft` tint),
+  plus `--radius --radius-sm --shadow-1 --shadow-2 --font-sans --font-display
+  --font-mono`. Never hard-code page, text or border colours, or define your own
+  dark-mode media query: the theme switches the variables for you. Fixed colours
+  are fine only for data (chart series, category dots), and must read on both
+  light and dark backgrounds.
+- Use the kit's classes before writing your own: `.page` (add `.wide` for
+  dashboards), `.card`, `.row`, `.stack`, `.grow`, `.list`, `.tabs`/`.tab`,
+  `.chip` (`.accent .ok .warn .danger`), `.notice` (`.ok .warn .error`),
+  `.empty`, `.status`, `.muted`, `.dot`, `.sr-only`, and buttons (default is
+  primary; `.ghost`, `.quiet`, `.danger`, `.small`). Inputs, selects and
+  textareas are already styled.
+- Headings use the display font; keep body text in the sans font.
+- Don't call any other `/_hearth/` path.
 
 ## Forbidden (the platform rejects these)
 
@@ -58,14 +85,16 @@ Ordinary links to other sites (`<a href="https://...">`) are fine.
 - Edits are last-write-wins. Reload the latest value right before saving a
   change, and refresh the view every 30 seconds or when the tab regains focus,
   so two people using the app at once don't clobber each other.
-- Per-device preferences (theme, last tab) go in `localStorage`.
+- Per-device preferences (last tab, sort order) go in `localStorage`. Don't
+  build your own theme setting; the house theme switch covers it.
 - On revisions, keep existing data keys and shapes compatible. If a shape must
   change, read the old shape and migrate it.
 
 ## Experience
 
 - Mobile first, and also comfortable on a big screen. Tap targets at least 44px.
-- Works in light and dark mode (the template's variables handle this).
+- Works in light and dark mode (the house theme's variables handle this;
+  check that anything you draw, such as SVG charts, uses them too).
 - Accessible: semantic HTML, a `<label>` for every input, visible focus,
   sufficient contrast, no information conveyed by color alone.
 - Friendly empty states ("No chores yet. Add the first one below.").

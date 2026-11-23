@@ -49,6 +49,7 @@ type Job struct {
 	ID       string    `json:"id"`
 	Name     string    `json:"name"`
 	Revise   bool      `json:"revise"`
+	Kind     string    `json:"kind"`   // create, revise, restore
 	Status   string    `json:"status"` // running, done, failed
 	Log      []string  `json:"log"`
 	URL      string    `json:"url,omitempty"`
@@ -118,20 +119,37 @@ func (b *Builder) Start(req Request) (Job, error) {
 	if len(req.Prompt) > maxPromptLen {
 		return Job{}, fmt.Errorf("keep the description under %d characters", maxPromptLen)
 	}
+	kind := "create"
+	if req.Revise {
+		kind = "revise"
+	}
+	return b.startJob(req.Name, kind, func(ctx context.Context, j *Job) (string, error) {
+		return b.build(ctx, j, req)
+	})
+}
+
+func (b *Builder) startJob(name, kind string, fn func(context.Context, *Job) (string, error)) (Job, error) {
 	b.jobsMu.Lock()
 	for _, j := range b.jobs {
-		if j.Name == req.Name && j.Status == "running" {
+		if j.Name == name && j.Status == "running" {
 			b.jobsMu.Unlock()
-			return Job{}, fmt.Errorf("a build for %q is already running", req.Name)
+			return Job{}, fmt.Errorf("a job for %q is already running", name)
 		}
 	}
 	idb := make([]byte, 6)
 	rand.Read(idb)
-	job := &Job{ID: hex.EncodeToString(idb), Name: req.Name, Revise: req.Revise, Status: "running", Started: time.Now()}
+	job := &Job{ID: hex.EncodeToString(idb), Name: name, Kind: kind, Revise: kind == "revise", Status: "running", Started: time.Now()}
 	b.jobs[job.ID] = job
 	b.jobsMu.Unlock()
 
-	go b.run(job, req)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), jobTimeout)
+		defer cancel()
+		b.runMu.Lock()
+		defer b.runMu.Unlock()
+		url, err := fn(ctx, job)
+		b.finish(job, url, err)
+	}()
 	return b.snapshot(job), nil
 }
 
@@ -176,15 +194,6 @@ func (b *Builder) finish(j *Job, url string, err error) {
 	}
 	j.Status, j.URL = "done", url
 	j.Log = append(j.Log, time.Now().Format("15:04:05")+"  live at "+url)
-}
-
-func (b *Builder) run(j *Job, req Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), jobTimeout)
-	defer cancel()
-	b.runMu.Lock()
-	defer b.runMu.Unlock()
-	url, err := b.build(ctx, j, req)
-	b.finish(j, url, err)
 }
 
 type modelOutput struct {
@@ -292,12 +301,15 @@ func (b *Builder) build(ctx context.Context, j *Job, req Request) (string, error
 	if err := b.commit(ctx, j, repo, req.Name, fmt.Sprintf("builder: %s %s (%s)", verb, req.Name, app.Title), req.Prompt); err != nil {
 		return "", err
 	}
+	return b.deployAndCheck(ctx, j, req.Name)
+}
 
+func (b *Builder) deployAndCheck(ctx context.Context, j *Job, name string) (string, error) {
 	b.logf(j, "deploying")
 	if err := b.engine.Sync(ctx, true); err != nil {
 		return "", fmt.Errorf("deploy: %w", err)
 	}
-	st, ok := b.engine.State().Apps[req.Name]
+	st, ok := b.engine.State().Apps[name]
 	if !ok || st.Status != "live" {
 		msg := "the app didn't go live"
 		if ok && st.Error != "" {
@@ -305,7 +317,7 @@ func (b *Builder) build(ctx context.Context, j *Job, req Request) (string, error
 		}
 		return "", errors.New(msg)
 	}
-	return b.cfg.AppURL(req.Name), nil
+	return b.cfg.AppURL(name), nil
 }
 
 // prepareRepo returns a checkout at the tip of the deploy branch. In git

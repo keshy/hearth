@@ -5,57 +5,179 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>App Builder</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <script src="/_hearth/hearth.js"></script>
+  <link rel="stylesheet" href="/_hearth/theme.css">
+  <link rel="stylesheet" href="/_hearth/kit.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="bar">
     <a class="back" id="portal-link" href="/">All apps</a>
     <h1>App Builder</h1>
-    <span class="meta" id="info"></span>
+    <span class="chip" id="info" hidden></span>
+    <button class="theme-toggle" data-hearth-theme-toggle></button>
   </header>
 
-  <main class="page">
-    <section class="card">
-      <div class="tabs" role="tablist">
-        <button type="button" role="tab" class="tab active" id="tab-new" aria-selected="true">New app</button>
-        <button type="button" role="tab" class="tab" id="tab-change" aria-selected="false">Change an app</button>
+  <div class="shell">
+    <aside class="side" aria-label="Apps">
+      <div class="row side-top">
+        <button type="button" id="new-app" class="new-app grow">+ New app</button>
+        <button type="button" id="apps-toggle" class="ghost apps-toggle" aria-expanded="false">Switch app</button>
       </div>
+      <input id="filter" type="search" placeholder="Filter apps" autocomplete="off" aria-label="Filter apps">
+      <ul class="apps" id="apps"></ul>
+      <p class="hint side-hint">Apps made with the builder can be changed, fixed and rolled back here. Hand-written apps are read-only: you can preview them, see their errors, files and history.</p>
+    </aside>
 
-      <form id="build-form">
-        <div id="new-fields">
-          <label for="name">Name <small>lowercase letters, digits and dashes</small></label>
-          <input id="name" maxlength="40" autocomplete="off" placeholder="chores">
-          <p class="hint">Address: <code id="preview">https://&lt;name&gt;</code></p>
+    <main class="main" id="main">
+      <section class="view" id="view-new" hidden>
+        <div class="card">
+          <h2>Build a new app</h2>
+          <form id="new-form" class="stack">
+            <div>
+              <label for="name">Name <small>lowercase letters, digits and dashes</small></label>
+              <input id="name" maxlength="40" autocomplete="off" placeholder="chores">
+              <p class="hint">Address: <code id="address">https://&lt;name&gt;</code></p>
+            </div>
+            <div>
+              <label for="new-prompt">What should it do?</label>
+              <textarea id="new-prompt" rows="7" maxlength="4000"
+                placeholder="A weekly chore chart for two kids. Each chore has a name, who it belongs to and which days. Tapping a day marks it done; it resets every Sunday."></textarea>
+            </div>
+            <div class="row wrap">
+              <button type="submit" id="new-submit">Build it</button>
+              <p class="hint grow">Goes live right away. Builder apps can only use their own files and shared app data, and follow the house theme.</p>
+            </div>
+          </form>
         </div>
-        <div id="change-fields" hidden>
-          <label for="existing">App</label>
-          <select id="existing"></select>
-          <p class="hint" id="no-apps" hidden>Nothing built with the builder yet.</p>
+        <div class="card job" id="new-job" hidden></div>
+      </section>
+
+      <section class="view" id="view-app" hidden>
+        <div class="card app-head">
+          <img class="app-icon" id="a-icon" alt="">
+          <div class="grow">
+            <div class="row wrap">
+              <h2 class="app-title" id="a-title"></h2>
+              <span class="chip" id="a-status"></span>
+              <span class="chip" id="a-kind"></span>
+              <span class="chip danger" id="a-errors" hidden></span>
+            </div>
+            <p class="muted app-desc" id="a-desc"></p>
+            <p class="hint app-meta" id="a-meta"></p>
+          </div>
+          <div class="app-actions">
+            <a class="btn ghost small" id="a-open" target="_blank" rel="noopener">Open ↗</a>
+          </div>
+        </div>
+        <div class="card job" id="app-job" hidden></div>
+
+        <div class="tabs app-tabs" role="tablist" id="app-tabs">
+          <button role="tab" data-tab="preview">Preview</button>
+          <button role="tab" data-tab="health">Health</button>
+          <button role="tab" data-tab="change" id="tab-change">Change</button>
+          <button role="tab" data-tab="history">History</button>
+          <button role="tab" data-tab="files">Files</button>
+          <button role="tab" data-tab="logs">Logs</button>
         </div>
 
-        <label for="prompt" id="prompt-label">What should it do?</label>
-        <textarea id="prompt" rows="6" maxlength="4000"
-          placeholder="A weekly chore chart for two kids. Each chore has a name, who it belongs to and which days. Tapping a day marks it done; it resets every Sunday."></textarea>
-
-        <div class="row actions">
-          <button type="submit" id="submit">Build it</button>
-          <p class="hint">Goes live right away. Generated apps can only use their own files and shared app data.</p>
+        <div class="panel" id="p-preview">
+          <div class="card">
+            <div class="row wrap preview-bar">
+              <div class="tabs" role="group" aria-label="Device size" id="devices">
+                <button type="button" data-device="phone" aria-selected="true">Phone</button>
+                <button type="button" data-device="tablet">Tablet</button>
+                <button type="button" data-device="desktop">Desktop</button>
+              </div>
+              <span class="grow"></span>
+              <button type="button" class="ghost small" id="reload">Reload</button>
+            </div>
+            <p class="hint" id="preview-note"></p>
+            <div class="stage" id="stage"></div>
+          </div>
         </div>
-      </form>
-    </section>
 
-    <section class="card" id="job" hidden>
-      <h2 id="job-title">Building…</h2>
-      <ol class="log" id="log"></ol>
-      <p id="result" class="result" hidden></p>
-    </section>
+        <div class="panel" id="p-health" hidden>
+          <div class="card">
+            <div class="row wrap">
+              <h2 class="grow">Checks</h2>
+              <button type="button" class="ghost small" id="recheck">Run again</button>
+              <button type="button" class="small" id="ai-review">Ask Gemini to review</button>
+            </div>
+            <ul class="checks" id="checks"></ul>
+            <div id="review"></div>
+            <div class="fix" id="fix" hidden>
+              <label for="fix-prompt">Fix request <small>edit before sending if you like</small></label>
+              <textarea id="fix-prompt" rows="6" maxlength="4000"></textarea>
+              <div class="row wrap">
+                <button type="button" id="fix-go">Fix it with the builder</button>
+                <p class="hint grow">Sends this as a change. The app is rebuilt and redeployed; you can roll back from History.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="row wrap">
+              <h2 class="grow">Errors from browsers</h2>
+              <button type="button" class="quiet small" id="clear-errors">Clear</button>
+            </div>
+            <p class="hint">When someone opens the app and a script fails, the house theme reports it here. Kept in memory until the server restarts.</p>
+            <ul class="errors" id="errors"></ul>
+          </div>
+        </div>
 
-    <section class="card">
-      <h2>Built with the builder</h2>
-      <ul class="list" id="apps"></ul>
-      <p class="empty" id="apps-empty" hidden>Nothing yet. Your first app will show up here.</p>
-    </section>
-  </main>
+        <div class="panel" id="p-change" hidden>
+          <div class="card">
+            <form id="change-form" class="stack">
+              <div>
+                <label for="change-prompt">What should change?</label>
+                <textarea id="change-prompt" rows="6" maxlength="4000" placeholder="Add a 'done this week' counter at the top, and make the checkboxes bigger."></textarea>
+              </div>
+              <div class="row wrap">
+                <button type="submit" id="change-submit">Apply change</button>
+                <p class="hint grow">Gemini gets the current files and your request, the guardrails check the result, and it goes live. Every change is a commit you can roll back.</p>
+              </div>
+            </form>
+          </div>
+          <div class="notice" id="change-readonly" hidden>This app was written by hand, so the builder won't change it. Edit it in the repo; it deploys on the next commit.</div>
+        </div>
+
+        <div class="panel" id="p-history" hidden>
+          <div class="card">
+            <h2>Versions</h2>
+            <ol class="history" id="history"></ol>
+          </div>
+        </div>
+
+        <div class="panel" id="p-files" hidden>
+          <div class="card files">
+            <ul class="file-list" id="file-list"></ul>
+            <div class="file-view">
+              <div class="row file-head"><code id="file-name" class="grow"></code><span class="hint" id="file-size"></span></div>
+              <pre class="code" id="file-body"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="p-logs" hidden>
+          <div class="card">
+            <h2>Builder jobs</h2>
+            <div id="jobs"></div>
+          </div>
+          <div class="card">
+            <h2>Deploy build log</h2>
+            <pre class="code" id="build-log"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-empty">
+        <div class="card empty-state">
+          <h2>Pick an app, or build a new one</h2>
+          <p class="muted">Choose an app on the left to preview it, check its health, see what changed and roll back.</p>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>

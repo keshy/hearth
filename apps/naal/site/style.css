@@ -1,11 +1,12 @@
 :root {
-  --day: #d9480f;
-  --tint: #fff4e6;
-  --paper: #fbf7f0;
-  --ink: #2b2118;
-  --muted: #7a6a5a;
-  --card: #fffdf9;
-  --line: #eadfce;
+  /* Naal's own colours. Paper, ink, card and lines come from the house theme,
+     so light and dark follow the house setting like every other app. */
+  --accent-light: #d9480f;
+  --accent-dark: #ff8a4c;
+  --day: var(--day-base, #d9480f);
+  --paper: var(--bg);
+  --ink: var(--fg);
+  --tint: color-mix(in srgb, var(--day) 9%, var(--card));
   --gold: #c99a2e;
   --rahu: #e03131;
   --yama: #495057;
@@ -15,18 +16,13 @@
   --sans: "Inter", system-ui, -apple-system, sans-serif;
   --tamil: "Noto Serif Tamil", "Tamil Sangam MN", serif;
   --deva: "Noto Sans Devanagari", "Kohinoor Devanagari", sans-serif;
-  color-scheme: light;
 }
 
-body.evening {
-  --paper: #15121d;
-  --ink: #f1e9dc;
-  --muted: #a99d8f;
-  --card: #1f1a2a;
-  --line: #342c42;
+:root[data-theme="dark"] {
+  --day: color-mix(in srgb, var(--day-base, #d9480f) 72%, white);
   --kuligai: #6c6f75;
   --yama: #8a8f96;
-  color-scheme: dark;
+  --tint: color-mix(in srgb, var(--day) 14%, var(--card));
 }
 
 * { box-sizing: border-box; }
@@ -95,6 +91,11 @@ a { color: var(--day); }
   font-size: 1.1rem;
 }
 .nav .pill { padding: 0 0.9rem; font-size: 0.85rem; }
+.nav .theme-toggle {
+  min-height: 2.2rem; margin-left: 0.25rem; background: rgba(0, 0, 0, 0.28); color: #fff;
+  border-color: rgba(255, 255, 255, 0.25); backdrop-filter: blur(8px);
+}
+@media (max-width: 520px) { .nav .theme-toggle .theme-label { display: none; } }
 .nav .pill[aria-current="date"] { background: rgba(255, 255, 255, 0.92); color: var(--day); }
 .date-pick { position: relative; overflow: hidden; font-size: 0.95rem; }
 .date-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -140,7 +141,6 @@ a { color: var(--day); }
   padding: 0.35rem 0.85rem; font-size: 0.85rem; color: var(--day);
 }
 .ghost:hover { background: var(--tint); }
-body.evening .ghost:hover { background: rgba(255, 255, 255, 0.06); }
 .ghost.small { font-size: 0.78rem; padding: 0.25rem 0.7rem; }
 
 /* Sky: arc, moon and panchangam */
@@ -182,7 +182,7 @@ body { overflow-x: hidden; }
   border-left: 6px solid var(--day);
   background: linear-gradient(110deg, var(--tint), var(--card) 60%);
 }
-body.evening .fest { background: linear-gradient(110deg, color-mix(in srgb, var(--day) 22%, var(--card)), var(--card) 60%); }
+:root[data-theme="dark"] .fest { background: linear-gradient(110deg, color-mix(in srgb, var(--day) 22%, var(--card)), var(--card) 60%); }
 .fest.minor { padding: 0.9rem 1.2rem; }
 .fest-head { display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; align-items: baseline; }
 .fest-head h2 { font-size: 1.45rem; }
@@ -215,7 +215,6 @@ body.evening .fest { background: linear-gradient(110deg, color-mix(in srgb, var(
 /* The day */
 .badges { list-style: none; padding: 0; margin: 0.7rem 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .badges li { background: var(--tint); border-radius: 999px; padding: 0.25rem 0.75rem; font-size: 0.82rem; }
-body.evening .badges li { background: rgba(255, 255, 255, 0.07); }
 .badges b { font-weight: 600; color: var(--day); margin-right: 0.25rem; }
 details summary { cursor: pointer; color: var(--day); font-size: 0.92rem; margin-top: 0.4rem; }
 .fact { font-size: 0.92rem; border-top: 1px dashed var(--line); padding-top: 0.6rem; margin-top: 0.8rem; }
@@ -225,7 +224,6 @@ details summary { cursor: pointer; color: var(--day); font-size: 0.92rem; margin
 .story #story-text { font-family: var(--serif); font-size: 1.05rem; line-height: 1.65; }
 .story #story-text::first-letter { font-size: 2.7em; float: left; line-height: 0.9; margin: 0.08em 0.1em 0 0; color: var(--day); font-weight: 700; }
 .moral { background: var(--tint); border-radius: 14px; padding: 0.55rem 0.9rem; font-size: 0.95rem; }
-body.evening .moral { background: rgba(255, 255, 255, 0.06); }
 .moral::before { content: "Moral · "; font-weight: 600; color: var(--day); }
 .speaking #story-text { background: linear-gradient(90deg, var(--tint), transparent); border-radius: 8px; }
 
@@ -238,7 +236,6 @@ body.evening .moral { background: rgba(255, 255, 255, 0.06); }
   background: var(--card);
 }
 .plate .offer li { border-color: color-mix(in srgb, var(--day) 45%, var(--line)); background: var(--tint); }
-body.evening .plate .offer li { background: rgba(255, 255, 255, 0.06); }
 .plate .festive li { border-style: dashed; }
 
 /* Pooja */
@@ -256,7 +253,6 @@ body.evening .plate .offer li { background: rgba(255, 255, 255, 0.06); }
 .script-toggle button[aria-pressed="true"] { background: var(--day); color: #fff; }
 .script-toggle button[data-script="deva"] { font-family: var(--deva); }
 .mantra { border-radius: 16px; background: var(--tint); padding: 0.8rem 1rem; margin: 0.6rem 0; }
-body.evening .mantra { background: rgba(255, 255, 255, 0.05); }
 .mantra .label { color: var(--day); }
 .mantra .verse { white-space: pre-line; font-size: 1.08rem; line-height: 1.7; margin: 0.2rem 0; }
 .mantra .verse.deva { font-size: 1.15rem; }
@@ -291,7 +287,6 @@ body.evening .mantra { background: rgba(255, 255, 255, 0.05); }
   transition: background 0.15s, transform 0.15s;
 }
 .songs a:hover { background: var(--tint); transform: translateX(3px); }
-body.evening .songs a:hover { background: rgba(255, 255, 255, 0.05); }
 .songs .play {
   width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--day); color: #fff;
   display: grid; place-items: center; font-size: 0.95rem;
@@ -309,7 +304,6 @@ body.evening .songs a:hover { background: rgba(255, 255, 255, 0.05); }
   background: transparent; border: 0; border-radius: 12px; padding: 0.45rem 0.5rem; text-align: left;
 }
 .upcoming li button:hover { background: var(--tint); }
-body.evening .upcoming li button:hover { background: rgba(255, 255, 255, 0.05); }
 .upcoming .date { display: grid; justify-items: center; line-height: 1.1; color: var(--c); }
 .upcoming .date b { font-family: var(--serif); font-size: 1.3rem; }
 .upcoming .date small { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -320,3 +314,7 @@ body.evening .upcoming li button:hover { background: rgba(255, 255, 255, 0.05); 
 
 .foot { max-width: 72rem; margin: 0 auto; padding: 1rem clamp(0.8rem, 3vw, 2rem) 3rem; text-align: center; font-size: 0.9rem; color: var(--muted); }
 .foot-actions { display: flex; gap: 0.5rem; justify-content: center; }
+
+:root[data-theme="dark"] .week .wd,
+:root[data-theme="dark"] .upcoming .date { color: color-mix(in srgb, var(--c) 68%, white); }
+:root[data-theme="dark"] .hero { background: var(--day-base, #d9480f); }

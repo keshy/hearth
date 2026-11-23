@@ -55,6 +55,34 @@ url: http://192.168.0.1/
 Folders starting with `.` or `_` are ignored. `apps/groceries` is a
 hand-written example, `apps/router` is a link, and `apps/builder` is the builder.
 
+### The house theme
+
+Every app host, the portal and the admin page serve a shared look at
+`/_hearth/`, so apps match each other and switch between light and dark
+together:
+
+```html
+<script src="/_hearth/hearth.js"></script>        <!-- first in <head> -->
+<link rel="stylesheet" href="/_hearth/theme.css">   <!-- colours, type, base -->
+<link rel="stylesheet" href="/_hearth/kit.css">     <!-- optional components -->
+...
+<button class="theme-toggle" data-hearth-theme-toggle></button>
+```
+
+- `theme.css` defines the tokens (`--bg`, `--card`, `--fg`, `--muted`,
+  `--line`, `--accent`, `--ok`/`--warn`/`--danger`, radii, shadows, fonts) for
+  light and dark. An app picks its colour with `--accent-light` and
+  `--accent-dark`, and uses the variables for everything else.
+- `kit.css` has ready-made header bar, cards, buttons, inputs, tabs, chips
+  and notices. Both files are in CSS cascade layers, so an app's own CSS
+  always wins.
+- The toggle cycles Auto → Light → Dark. The choice is one cookie on the apps
+  domain, so it applies to every app; `hearth.js` reads it from the server, so
+  apps never touch cookies.
+- `hearth.js` also reports uncaught errors and failed script loads to
+  `/_hearth/errors` (rate limited, kept in memory). The App Builder shows them
+  per app.
+
 ### Shared data for static apps
 
 Every static or hybrid app gets a tiny key-value store at `/_api/data/<key>`
@@ -96,8 +124,8 @@ model today" and fall back; `apps/astroscience` does.
 | --- | --- |
 | `groceries` | Shared shopping list; the hand-written example of `/_api/data`. |
 | `naal` | Today in a Tamil home: panchangam computed in the browser, festivals, weekday prayers and music. |
-| `astroscience` | Learn Tamil astrology with a live chart: houses, lords, aspects, dasha, yogas, a cheat sheet, and a reverse search ("find a moment") that uses `/_api/llm`. |
-| `builder` | The App Builder. |
+| `astroscience` | Learn Tamil astrology with a live chart. Opens on a step-by-step reading (each takeaway with its evidence and a link to the rule behind it), life areas ranked by support, the current dasha period, and an optional Gemini retelling; then the mechanics (grahas, houses, aspects, yogas), a cheat sheet and a reverse search ("find a moment"). |
+| `builder` | The App Builder: build, change, preview, troubleshoot and roll back apps. |
 | `router` | A link to the router's admin page. |
 
 ## The App Builder
@@ -119,6 +147,22 @@ Content-Security-Policy, so even code that slipped past the checks can't load
 or send anything off the box. The builder only revises apps it generated;
 hand-written apps are never touched. To change how the builder writes apps,
 edit the rules file or the template and push.
+
+The builder is also where you look after apps. It lists every app (hand-written
+ones read-only) with its deploy status and browser errors, and for each one:
+
+- **Preview**: the live app in a phone, tablet or desktop frame. Generated
+  apps allow only the builder to frame them.
+- **Health**: checks that run without the model (deploy status, errors seen
+  in browsers, guardrails, files that are linked but missing, house theme
+  use), an optional Gemini code review, and a ready-made fix request you can
+  edit and send as a change.
+- **Change**: describe a change in plain words.
+- **History**: every commit that touched the app, with the request that
+  produced it. Restore any earlier version of a generated app; the restore is
+  itself a new commit, so it can be undone.
+- **Files** and **Logs**: the source as deployed, builder jobs, and the
+  deploy build log.
 
 Setup on the home Mac (once, as the user the service runs as):
 

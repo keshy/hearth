@@ -4,6 +4,7 @@ import { interpretOffline, sanitize } from "../site/js/interpret.js";
 import { GRAHAS, ORDER, SIGNS } from "../site/js/knowledge.js";
 import { CITIES, offsetMinutes, utcToZoned, zonedToUtc } from "../site/js/places.js";
 import { scoreChart, search } from "../site/js/search.js";
+import { houseScores, reading, storyFacts, tabTakeaway } from "../site/js/reading.js";
 
 let failures = 0;
 const check = (name, ok, extra = "") => {
@@ -81,5 +82,38 @@ check("search results meet the essentials", results.every((r) => r.lagna === 4 &
 check("search respects the hour window", results.every((r) => { const h = utcToZoned(r.ms, chennai.tz).hour; return h >= 6 && h < 22; }));
 check("results are re-scored consistently", results.every((r) => Math.abs(scoreChart(constraints, analyze(r.ms, chennai)).score - r.score) < 1e-9));
 check("search is fast enough", took < 20000, `${took} ms`);
+
+// The reading layer: plain-English takeaways, each with evidence and a link.
+{
+  const ms = zonedToUtc(1990, 1, 15, 6, 30, chennai.tz);
+  const c = analyze(ms, chennai);
+  const d = dashaTimeline(ms, c.planets.moon.lon);
+  const r = reading(c, d, { name: "Asha", now: zonedToUtc(2026, 11, 23, 12, 0, chennai.tz) });
+  const tabs = new Set(["reading", "areas", "planets", "houses", "aspects", "dasha", "yogas"]);
+  check("reading has a headline", typeof r.headline === "string" && r.headline.length > 20, r.headline);
+  check("reading has 5-7 takeaways", r.takeaways.length >= 5 && r.takeaways.length <= 7, String(r.takeaways.length));
+  check("every takeaway has a title, body, evidence and a valid link",
+    r.takeaways.every((t) => t.title && t.body.length && t.why.length && tabs.has(t.learn.tab)));
+  check("no takeaway text says undefined or NaN",
+    !/undefined|NaN|null/.test(JSON.stringify(r.takeaways)));
+  check("the current period is found", r.current.maha && r.current.sub && r.current.maha.start <= r.current.sub.start);
+  const scores = houseScores(c);
+  check("12 life-area scores in 0..10", scores.length === 13 && scores.slice(1).every((a) => a.score >= 0 && a.score <= 10 && a.reasons.length));
+  check("strongest and weakest planets differ", GRAHAS[r.strong] && GRAHAS[r.weak] && r.strong !== r.weak, `${r.strong} / ${r.weak}`);
+  check("each how-it-works tab has a takeaway line",
+    ["planets", "houses", "aspects", "yogas", "dasha"].every((t) => typeof tabTakeaway(t, c, r) === "string" && !/undefined|NaN/.test(tabTakeaway(t, c, r))));
+  const facts = JSON.stringify(storyFacts(c, r, "Asha"));
+  check("story facts fit the model prompt limit", facts.length < 4000, `${facts.length} bytes`);
+  // Many random charts should never produce broken text.
+  let bad = 0;
+  for (let i = 0; i < 200; i++) {
+    const m = zonedToUtc(1950, 1, 1, 0, 0, chennai.tz) + i * 97 * 86400000 + i * 3_600_000 * 7;
+    const cc = analyze(m, chennai);
+    const rr = reading(cc, dashaTimeline(m, cc.planets.moon.lon), { now: m + 30 * 365.25 * 86400000 });
+    const txt = JSON.stringify(rr) + ["planets", "houses", "aspects", "yogas", "dasha"].map((t) => tabTakeaway(t, cc, rr)).join("");
+    if (/undefined|NaN|\[object/.test(txt) || JSON.stringify(storyFacts(cc, rr, "")).length >= 4000) bad++;
+  }
+  check("200 random charts read cleanly", bad === 0, `${bad} bad`);
+}
 
 if (failures) process.exit(1);

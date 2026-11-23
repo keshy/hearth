@@ -1,10 +1,16 @@
 {{template "head" .}}
 <header class="top">
-  <a class="brand" href="/"><img src="/static/icon.svg" alt="" width="22" height="22">{{.Domain}}</a>
+  <a class="brand" href="/"><img src="/static/icon.svg" alt="" width="26" height="26">Hearth</a>
   <input id="q" type="search" placeholder="Search apps  ( / )" autocomplete="off" aria-label="Search apps">
+  <button class="theme-toggle" data-hearth-theme-toggle></button>
 </header>
 <main>
   {{if .Missing}}<div class="notice">There's no app called <b>{{.Missing}}</b> yet. Here's everything that exists.</div>{{end}}
+
+  <section class="hello">
+    <h1 id="greeting">Welcome home</h1>
+    <p id="today">{{len .Apps}} apps on {{.Domain}}</p>
+  </section>
 
   {{if .Tags}}
   <nav class="tags" id="tags">
@@ -32,7 +38,7 @@
 </main>
 <footer>
   <a href="{{.TrustURL}}">Seeing certificate warnings? Trust this network</a>
-  · <a href="{{.AdminURL}}">Admin</a>
+  · <a href="{{.AdminURL}}">Deploys</a>
   · <a href="/api/apps">JSON</a>
 </footer>
 <script src="/static/portal.js"></script>

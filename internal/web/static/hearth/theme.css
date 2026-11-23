@@ -1,0 +1,125 @@
+/* Hearth house theme: shared tokens for every app on the home network.
+   Light and dark follow the house setting (data-theme on <html>, set by
+   /_hearth/hearth.js) and fall back to the device preference.
+   Apps choose their personality with --accent-light / --accent-dark and may
+   override any token in their own (unlayered) CSS, which always wins. */
+@layer hearth.tokens, hearth.base, hearth.kit;
+
+@layer hearth.tokens {
+  :root {
+    --accent-light: #c2410c;
+    --accent-dark: #fb923c;
+
+    --bg: #f7f4ef;
+    --bg-2: #efe9e0;
+    --card: #ffffff;
+    --card-2: #fbf9f6;
+    --fg: #1f1a15;
+    --muted: #6b6257;
+    --faint: #9b9184;
+    --line: #e8e1d6;
+    --line-strong: #d5cab9;
+    --accent: var(--accent-light);
+    --accent-fg: #ffffff;
+    --ok: #15803d;
+    --warn: #b45309;
+    --danger: #b91c1c;
+    --info: #1d4ed8;
+    --shadow-1: 0 1px 2px rgba(40, 25, 10, 0.06), 0 1px 1px rgba(40, 25, 10, 0.04);
+    --shadow-2: 0 10px 30px rgba(40, 25, 10, 0.10), 0 2px 6px rgba(40, 25, 10, 0.05);
+    --scrim: rgba(25, 18, 10, 0.4);
+
+    --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+    --ok-soft: color-mix(in srgb, var(--ok) 13%, transparent);
+    --warn-soft: color-mix(in srgb, var(--warn) 14%, transparent);
+    --danger-soft: color-mix(in srgb, var(--danger) 12%, transparent);
+    --info-soft: color-mix(in srgb, var(--info) 12%, transparent);
+
+    --radius-sm: 10px;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --space: 16px;
+    --tap: 44px;
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #131110;
+    --bg-2: #0d0c0b;
+    --card: #1c1a17;
+    --card-2: #23201d;
+    --fg: #f2ede5;
+    --muted: #a99f92;
+    --faint: #7b7368;
+    --line: #2f2a25;
+    --line-strong: #423b34;
+    --accent: var(--accent-dark);
+    --accent-fg: #1a0f06;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --info: #93c5fd;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 12px 34px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --scrim: rgba(0, 0, 0, 0.55);
+    color-scheme: dark;
+  }
+
+  /* No script (or before it runs): follow the device. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --bg: #131110;
+      --bg-2: #0d0c0b;
+      --card: #1c1a17;
+      --card-2: #23201d;
+      --fg: #f2ede5;
+      --muted: #a99f92;
+      --faint: #7b7368;
+      --line: #2f2a25;
+      --line-strong: #423b34;
+      --accent: var(--accent-dark);
+      --accent-fg: #1a0f06;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --info: #93c5fd;
+      --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-2: 0 12px 34px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+      --scrim: rgba(0, 0, 0, 0.55);
+      color-scheme: dark;
+    }
+  }
+}
+
+@layer hearth.base {
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.5 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 2px; }
+  ::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+
+  /* The house theme switch. Any app can drop in
+     <button class="theme-toggle" data-hearth-theme-toggle></button>. */
+  /* !important so an app's own button styles (unlayered, so they'd
+     otherwise win) can't restyle the shared control. */
+  .theme-toggle {
+    display: inline-flex !important; align-items: center; gap: 6px;
+    width: auto !important; min-width: 0 !important; min-height: 36px !important; padding: 0 12px !important;
+    border: 1px solid var(--line) !important; border-radius: 999px !important;
+    background: var(--card) !important; color: var(--fg) !important; box-shadow: none !important;
+    font: 500 13px/1 var(--font-sans) !important; cursor: pointer; white-space: nowrap; filter: none !important;
+  }
+  .theme-toggle:hover { border-color: var(--line-strong) !important; }
+  .theme-toggle svg { width: 16px; height: 16px; flex: none; }
+}
