@@ -48,8 +48,13 @@ func TestClientPlays(t *testing.T) {
 		t.Fatal(err)
 	}
 	ms, err := c.Load(ctx, app.TransportID, cast.Media{URL: "https://example.test/a.m4a", ContentType: "audio/mp4", Title: "A"})
-	if err != nil || ms.PlayerState != "PLAYING" {
+	if err != nil || ms.MediaSessionID == 0 {
 		t.Fatalf("load: %+v %v", ms, err)
+	}
+	for ev := range c.Events() {
+		if st := cast.ParseMediaStatus(ev.Payload); len(st) == 1 && st[0].PlayerState == "PLAYING" {
+			break
+		}
 	}
 	if err := c.Media(ctx, app.TransportID, ms.MediaSessionID, "PAUSE"); err != nil {
 		t.Fatal(err)

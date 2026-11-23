@@ -5,7 +5,6 @@
 package connect
 
 import (
-	"archive/zip"
 	"bufio"
 	"bytes"
 	"context"
@@ -26,13 +25,13 @@ import (
 	"time"
 )
 
-// yt-dlp needs a JavaScript runtime (Deno) to read YouTube's player. Both are
-// official single-file releases kept in <data>/tools and checked against the
-// published checksums.
+// yt-dlp is the official single-file release, kept in <data>/tools and checked
+// against the published checksums. It runs without a JavaScript runtime on
+// purpose: with one it picks YouTube's TV client, whose links Cast speakers
+// can't fetch.
 const (
 	ytdlpURL     = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
 	ytdlpSums    = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS"
-	denoURL      = "https://github.com/denoland/deno/releases/latest/download/deno-%s-apple-darwin.zip"
 	updateEvery  = 24 * time.Hour
 	resolveLimit = 60 * time.Second
 )
@@ -60,7 +59,6 @@ func NewTools(dir string) *Tools {
 }
 
 func (t *Tools) ytdlp() string { return filepath.Join(t.dir, "yt-dlp") }
-func (t *Tools) deno() string  { return filepath.Join(t.dir, "deno") }
 
 // Status reports whether songs can be played and, if not, why.
 func (t *Tools) Status() (bool, string) {
@@ -90,12 +88,7 @@ func (t *Tools) ensure(ctx context.Context) error {
 	if err := os.MkdirAll(t.dir, 0o755); err != nil {
 		return err
 	}
-	if !executable(t.deno()) {
-		arch := map[string]string{"arm64": "aarch64", "amd64": "x86_64"}[runtime.GOARCH]
-		if err := t.installDeno(ctx, fmt.Sprintf(denoURL, arch)); err != nil {
-			return fmt.Errorf("installing Deno: %w", err)
-		}
-	}
+	os.Remove(filepath.Join(t.dir, "deno")) // installed by v0.6.0, no longer used
 	if !executable(t.ytdlp()) {
 		if err := t.installYtdlp(ctx); err != nil {
 			return fmt.Errorf("installing yt-dlp: %w", err)
@@ -167,44 +160,6 @@ func (t *Tools) installYtdlp(ctx context.Context) error {
 	return install(t.ytdlp(), bin)
 }
 
-func (t *Tools) installDeno(ctx context.Context, zipURL string) error {
-	sum, err := t.get(ctx, zipURL+".sha256sum")
-	if err != nil {
-		return err
-	}
-	f := strings.Fields(string(sum))
-	if len(f) == 0 {
-		return errors.New("empty Deno checksum")
-	}
-	z, err := t.get(ctx, zipURL)
-	if err != nil {
-		return err
-	}
-	if err := checkSum(z, f[0]); err != nil {
-		return err
-	}
-	zr, err := zip.NewReader(bytes.NewReader(z), int64(len(z)))
-	if err != nil {
-		return err
-	}
-	for _, zf := range zr.File {
-		if zf.Name != "deno" {
-			continue
-		}
-		rc, err := zf.Open()
-		if err != nil {
-			return err
-		}
-		bin, err := io.ReadAll(io.LimitReader(rc, 300<<20))
-		rc.Close()
-		if err != nil {
-			return err
-		}
-		return install(t.deno(), bin)
-	}
-	return errors.New("the Deno download has no deno binary")
-}
-
 func checkSum(b []byte, want string) error {
 	got := sha256.Sum256(b)
 	if !strings.EqualFold(hex.EncodeToString(got[:]), want) {
@@ -246,7 +201,7 @@ func (t *Tools) Resolve(ctx context.Context, id string) (string, string, error) 
 	ctx, cancel := context.WithTimeout(ctx, resolveLimit)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, t.ytdlp(),
-		"--force-ipv4", "--no-warnings", "--no-playlist", "--js-runtimes", "deno:"+t.deno(),
+		"--force-ipv4", "--no-warnings", "--no-playlist",
 		"-f", "bestaudio[ext=m4a]/bestaudio[acodec=opus]/bestaudio",
 		"--print", "%(ext)s %(url)s", "https://www.youtube.com/watch?v="+id)
 	var stderr bytes.Buffer

@@ -109,9 +109,6 @@ func checkConnect(r *report, cfg config.Config) {
 	} else {
 		r.ok("yt-dlp %s", strings.TrimSpace(string(out)))
 	}
-	if _, err := os.Stat(filepath.Join(cfg.ToolsDir(), "deno")); err != nil {
-		r.warn("Deno isn't installed yet; appshome serve downloads it to %s", cfg.ToolsDir())
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	ds, err := cast.Discover(ctx, 2500*time.Millisecond)

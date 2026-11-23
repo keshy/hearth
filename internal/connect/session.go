@@ -83,20 +83,28 @@ func (s *session) connect(ctx context.Context) (*cast.Client, cast.App, error) {
 	if c != nil && !isDone(c) && app.TransportID != "" {
 		return c, app, nil
 	}
-	if c == nil || isDone(c) {
-		var err error
-		c, err = cast.Dial(ctx, s.dev.Addr)
-		if err != nil {
-			return nil, cast.App{}, fmt.Errorf("couldn't reach %s: %w", s.dev.Name, err)
+	var err error
+	// A speaker that's just closed a failed song sometimes ignores the next
+	// launch; a fresh connection gets through.
+	for try := 0; try < 2; try++ {
+		if c == nil || isDone(c) || try > 0 {
+			if c != nil {
+				c.Close()
+			}
+			if c, err = cast.Dial(ctx, s.dev.Addr); err != nil {
+				return nil, cast.App{}, fmt.Errorf("couldn't reach %s: %w", s.dev.Name, err)
+			}
+			go s.watch(c)
 		}
-		go s.watch(c)
+		if st, err := c.ReceiverStatus(ctx); err == nil {
+			s.mu.Lock()
+			s.volume = st.Volume.Level
+			s.mu.Unlock()
+		}
+		if app, err = c.Launch(ctx, cast.DefaultMediaReceiver); err == nil {
+			break
+		}
 	}
-	if st, err := c.ReceiverStatus(ctx); err == nil {
-		s.mu.Lock()
-		s.volume = st.Volume.Level
-		s.mu.Unlock()
-	}
-	app, err := c.Launch(ctx, cast.DefaultMediaReceiver)
 	if err != nil {
 		c.Close()
 		return nil, cast.App{}, fmt.Errorf("%s wouldn't start playing: %w", s.dev.Name, err)
@@ -177,7 +185,9 @@ func (s *session) load(gen int) {
 	}
 	s.mu.Lock()
 	if gen == s.gen {
-		s.media = ms.MediaSessionID
+		// Speakers often answer LOAD with IDLE and report BUFFERING and
+		// PLAYING right after.
+		s.state = "buffering"
 		s.apply(ms)
 	}
 	s.mu.Unlock()
@@ -367,6 +377,13 @@ func (s *session) control(ctx context.Context, action string) error {
 	s.mu.Lock()
 	c, app, media := s.client, s.app, s.media
 	restart := action == "resume" && (c == nil || isDone(c) || s.state == "error" || s.state == "idle") && len(s.queue) > 0
+	if action == "stop" && (c == nil || isDone(c)) {
+		// Nothing on the speaker yet; cancel a song that's still loading.
+		s.gen++
+		s.state, s.err, s.pos, s.posAt = "idle", "", 0, time.Time{}
+		s.mu.Unlock()
+		return nil
+	}
 	s.mu.Unlock()
 	if restart {
 		s.start()

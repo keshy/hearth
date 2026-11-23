@@ -101,6 +101,14 @@ func (d *Device) idle(reason string) {
 	d.broadcast(session, nsMedia, st)
 }
 
+func (d *Device) report(state string) {
+	d.mu.Lock()
+	d.state = state
+	st := d.mediaStatus("")
+	d.mu.Unlock()
+	d.broadcast(session, nsMedia, st)
+}
+
 func (d *Device) accept() {
 	for {
 		c, err := d.ln.Accept()
@@ -181,10 +189,13 @@ func (d *Device) serve(c net.Conn) {
 		case m.Namespace == nsMedia && req.Type == "LOAD":
 			d.media++
 			d.loads = append(d.loads, req.Media.ContentID)
-			d.state = "PLAYING"
+			// Like a real speaker: answer IDLE, then report progress.
+			d.state = "IDLE"
 			reply = d.mediaStatus("")
 			if d.fail[req.Media.ContentID] {
 				after = func() { time.Sleep(20 * time.Millisecond); d.idle("ERROR") }
+			} else {
+				after = func() { time.Sleep(20 * time.Millisecond); d.report("BUFFERING"); d.report("PLAYING") }
 			}
 		case m.Namespace == nsMedia && req.Type == "PAUSE":
 			d.state = "PAUSED"

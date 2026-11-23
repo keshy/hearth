@@ -164,9 +164,10 @@ await fetch(`/_api/connect/devices/${id}`);            // {state, song, index, q
 // POST .../{id}/pause | resume | next | prev | stop, and .../{id}/volume with {level: 0..1}
 ```
 
-`appshome serve` downloads yt-dlp and Deno (which yt-dlp needs for YouTube)
-from their official GitHub releases into `<data>/tools`, checks their
-published SHA-256 sums, and updates yt-dlp daily. `appshome doctor` lists the
+`appshome serve` downloads yt-dlp from its official GitHub release into
+`<data>/tools`, checks the published SHA-256 sum, and updates it daily. It runs
+without a JavaScript runtime on purpose: with one (Deno), yt-dlp picks
+YouTube's TV client, and Cast speakers can't fetch those links. `appshome doctor` lists the
 devices it can see. `apps/naal` uses this for its "Connect to a device"
 button. It is for family listening at home; YouTube's terms don't cover
 playing videos outside its own players.
