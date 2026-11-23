@@ -142,10 +142,30 @@
       <section class="card listen" aria-labelledby="listen-h">
         <div class="listen-head">
           <h2 id="listen-h">Listen</h2>
-          <a class="ghost small" id="cast-all" target="_blank" rel="noopener">📺 Play on a TV or speaker</a>
+          <button type="button" class="ghost small connect-btn" id="connect" aria-haspopup="true" aria-expanded="false" hidden>
+            <span class="connect-icon" aria-hidden="true">📱</span><span id="connect-label">This device</span>
+          </button>
+        </div>
+        <div class="connect-panel" id="connect-panel" hidden>
+          <div class="connect-top">
+            <strong>Connect to a device</strong>
+            <span class="scanning" id="connect-scan" hidden>Looking around…</span>
+            <button type="button" class="ghost small" id="connect-rescan">Look again</button>
+          </div>
+          <ul class="devices" id="devices"></ul>
+          <p class="connect-note" id="connect-note"></p>
         </div>
         <div class="player" id="player" hidden>
           <div class="player-video" id="yt"></div>
+          <div class="remote" id="remote" hidden>
+            <img class="remote-art" id="remote-art" alt="">
+            <div class="remote-info">
+              <span class="remote-on" id="remote-on"></span>
+              <div class="progress" aria-hidden="true"><span id="remote-progress"></span></div>
+              <span class="remote-time" id="remote-time"></span>
+              <label class="volume"><span aria-hidden="true">🔈</span><input type="range" id="remote-volume" min="0" max="100" step="1" aria-label="Volume"><span aria-hidden="true">🔊</span></label>
+            </div>
+          </div>
           <div class="player-bar">
             <div class="np"><strong id="np-title"></strong><span id="np-by"></span></div>
             <div class="controls">
@@ -157,10 +177,10 @@
         </div>
         <ul class="songs" id="songs"></ul>
         <details class="speakers">
-          <summary>Bluetooth speakers and TVs</summary>
-          <p><strong>Bluetooth:</strong> songs play through whatever this phone or laptop is connected to. Pair the speaker in the device's Bluetooth settings, then press play here.</p>
-          <p><strong>TV, Chromecast or Nest speaker:</strong> on Android and in Chrome, the player shows its own Cast button when one is on the home Wi-Fi. On an iPhone, open the video full screen and use AirPlay. Or tap “Play on a TV or speaker” to open the whole list in YouTube and cast from there.</p>
-          <p>The screen stays on while a song plays here, because a locked phone pauses web pages. To listen with the screen off, use the ↗ next to a song to open it in YouTube Music.</p>
+          <summary>Speakers, TVs and Bluetooth</summary>
+          <p><strong>Nest speakers, Chromecasts and Cast TVs:</strong> tap the device button above the songs and pick one. The home server plays the music on it, so it keeps going when this phone locks, and anyone in the house can open Naal to pause or skip.</p>
+          <p><strong>Bluetooth:</strong> choose “This device”; songs play through whatever this phone or laptop is connected to. Pair the speaker in the device's Bluetooth settings first.</p>
+          <p>On “This device” the screen stays on while a song plays, because a locked phone pauses web pages. To listen here with the screen off, use the ↗ next to a song to open it in YouTube Music.</p>
         </details>
       </section>
     </div>
@@ -181,7 +201,7 @@
   </footer>
 
   <div class="np-dock" id="np-dock" hidden>
-    <button type="button" class="np-open" id="dock-open"><span class="eq" aria-hidden="true"></span><span id="dock-title"></span></button>
+    <button type="button" class="np-open" id="dock-open"><span class="eq" aria-hidden="true"></span><span class="dock-text"><span id="dock-title"></span><span class="dock-on" id="dock-on" hidden></span></span></button>
     <button type="button" class="ghost" id="dock-toggle" aria-label="Pause">⏸</button>
     <button type="button" class="ghost" id="dock-next" aria-label="Next song">⏭</button>
   </div>

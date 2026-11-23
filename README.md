@@ -143,12 +143,40 @@ Calls from other apps or other sites get 403, and generated apps can't ask
 for the capability. Apps should treat a failure (403/429/502/503) as "no
 model today" and fall back; `apps/astroscience` does.
 
+### Playing music on speakers and TVs (Hearth Connect)
+
+An app with `capabilities: [connect]` can find the Cast devices at home
+(Nest/Google Home speakers, Chromecasts, TVs with Chromecast built in) and play
+YouTube songs on them, the way Spotify's "Connect to a device" works. The home
+server does the playing: it looks the device up over Bonjour (`dns-sd`), gets
+the song's audio link with [yt-dlp](https://github.com/yt-dlp/yt-dlp), and
+hands it to the device's built-in media player. Music keeps going when the
+phone that started it locks or leaves, and anyone can open the app to pause or
+skip. When a song finishes, the server plays the next one in the queue.
+
+```js
+await fetch("/_api/connect/devices?fresh=1");          // {devices:[{id,name,model,audioOnly,status}], ready}
+await fetch(`/_api/connect/devices/${id}/play`, {      // replaces the device's queue
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ queue: [{ id: "AzTnnAfiqMg", title: "Lingashtakam", by: "SPB" }], index: 0 }),
+});
+await fetch(`/_api/connect/devices/${id}`);            // {state, song, index, queue, position, duration, volume, error}
+// POST .../{id}/pause | resume | next | prev | stop, and .../{id}/volume with {level: 0..1}
+```
+
+`appshome serve` downloads yt-dlp and Deno (which yt-dlp needs for YouTube)
+from their official GitHub releases into `<data>/tools`, checks their
+published SHA-256 sums, and updates yt-dlp daily. `appshome doctor` lists the
+devices it can see. `apps/naal` uses this for its "Connect to a device"
+button. It is for family listening at home; YouTube's terms don't cover
+playing videos outside its own players.
+
 ### The apps in this repo
 
 | App | What it is |
 | --- | --- |
 | `groceries` | Shared shopping list; the hand-written example of `/_api/data`. |
-| `naal` | Today in a Tamil home: panchangam computed in the browser, festivals, weekday prayers and music. |
+| `naal` | Today in a Tamil home: panchangam computed in the browser, festivals, weekday prayers and music, played in the page or on a speaker or TV at home (Hearth Connect). |
 | `astroscience` | Learn Tamil astrology with a live chart. Opens on a step-by-step reading (each takeaway with its evidence and a link to the rule behind it), life areas ranked by support, the current dasha period, and an optional Gemini retelling; then the mechanics (grahas, houses, aspects, yogas), a cheat sheet and a reverse search ("find a moment"). Up to 20 saved birth profiles live in the app's data on the server (`<data>/appdata/astroscience/profiles.json`), never in this repository; famous example charts (Rama, Krishna, Modi, Vivekananda) ship with the app. |
 | `builder` | The App Builder: build, change, preview, troubleshoot and roll back apps. |
 | `router` | A link to the router's admin page. |

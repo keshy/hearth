@@ -84,6 +84,9 @@ func cmdDoctor(args []string) error {
 	fmt.Println("\nBuilder (Gemini on Vertex AI)")
 	checkBuilder(r, cfg)
 
+	fmt.Println("\nSpeakers and TVs (Hearth Connect)")
+	checkConnect(r, cfg)
+
 	fmt.Println("\nCaddy")
 	checkHTTP(r, "admin API", "http://"+cfg.CaddyAdmin+"/config/", nil)
 	if _, err := os.Stat(cfg.RootCertPath()); err != nil {

@@ -281,7 +281,41 @@ details summary { cursor: pointer; color: var(--day); font-size: 0.92rem; margin
 
 /* Listen */
 .listen-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; }
-.listen-head a { text-decoration: none; }
+.connect-btn { display: inline-flex; align-items: center; gap: 0.4rem; max-width: 60%; }
+.connect-btn[hidden] { display: none; }
+.connect-btn span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.connect-btn.on { color: var(--day); border-color: var(--day); }
+.connect-panel { margin-top: 0.7rem; padding: 0.8rem; border: 1px solid var(--line); border-radius: 16px; background: var(--tint); }
+.connect-panel[hidden] { display: none; }
+.connect-top { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.connect-top strong { margin-right: auto; }
+.scanning { font-size: 0.8rem; color: var(--muted); }
+.scanning::before { content: ""; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.35rem; border-radius: 50%; background: var(--day); animation: ping 1s ease-in-out infinite alternate; }
+@keyframes ping { from { opacity: 0.25; transform: scale(0.7); } }
+@media (prefers-reduced-motion: reduce) { .scanning::before { animation: none; } }
+.devices { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+.devices button.device { width: 100%; display: flex; align-items: center; gap: 0.7rem; text-align: left; padding: 0.55rem 0.7rem; border-radius: 12px; background: var(--card, transparent); border: 1px solid var(--line); color: var(--ink); font: inherit; cursor: pointer; }
+.devices button.device:hover { border-color: var(--day); transform: none; }
+.devices button.device.current { border-color: var(--day); }
+.devices .device > span:nth-child(2) { display: grid; min-width: 0; flex: 1; }
+.devices strong { font-weight: 600; }
+.devices .by { font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device-icon { font-size: 1.3rem; }
+.devices .tick { color: var(--day); font-weight: 700; }
+.connect-note { margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--muted); }
+.connect-note:empty { display: none; }
+.remote { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.9rem; align-items: center; padding: 0.7rem; border-radius: 16px; background: var(--tint); }
+.remote[hidden], .player-video[hidden] { display: none; }
+.remote-art { width: 5.5rem; height: 5.5rem; object-fit: cover; border-radius: 12px; background: #000; }
+.remote-info { display: grid; gap: 0.35rem; min-width: 0; }
+.remote-on { font-size: 0.85rem; font-weight: 600; color: var(--day); }
+.remote-on.bad { color: #c0392b; font-weight: 500; }
+.progress { height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--ink) 15%, transparent); overflow: hidden; }
+.progress span { display: block; height: 100%; width: 0; background: var(--day); transition: width 1s linear; }
+.remote-time { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.volume { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; }
+.volume[hidden] { display: none; }
+.volume input { flex: 1; min-width: 0; accent-color: var(--day); }
 .songs { list-style: none; padding: 0; margin: 0.6rem 0 0; display: grid; gap: 0.5rem; }
 .songs li {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
@@ -328,7 +362,9 @@ body:has(.np-dock:not([hidden])) { padding-bottom: 5rem; }
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.6rem; background: none; border: 0; box-shadow: none;
   font: inherit; font-size: 0.88rem; color: var(--ink); text-align: left; padding: 0.3rem 0.5rem; cursor: pointer;
 }
-.np-dock .np-open span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.np-dock .dock-text { display: grid; min-width: 0; text-align: left; }
+.np-dock .dock-text > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.np-dock .dock-on { font-size: 0.72rem; color: var(--day); }
 .np-dock .eq { flex: none; width: 1.1rem; height: 1rem; background: linear-gradient(var(--day), var(--day)) 0 100% / 3px 40% no-repeat,
   linear-gradient(var(--day), var(--day)) 50% 100% / 3px 80% no-repeat, linear-gradient(var(--day), var(--day)) 100% 100% / 3px 55% no-repeat; }
 .np-dock.playing .eq { animation: eq 0.9s ease-in-out infinite alternate; }

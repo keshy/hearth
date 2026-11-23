@@ -23,6 +23,7 @@ import (
 	"appshome/internal/builder"
 	"appshome/internal/caddy"
 	"appshome/internal/config"
+	"appshome/internal/connect"
 	"appshome/internal/deploy"
 	"appshome/internal/registry"
 )
@@ -45,6 +46,7 @@ type Server struct {
 	pngs     pngCache
 	fb       *feedbackStore
 	fbOnce   sync.Once
+	connect  *connect.Hub
 }
 
 func New(ctx context.Context, cfg config.Config, engine *deploy.Engine, health *Health, b *builder.Builder, reload func() error, logger *log.Logger) (*Server, error) {
@@ -99,6 +101,9 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /_api/builder/apps/{name}/restore", s.builderRestore)
 	api.HandleFunc("DELETE /_api/builder/apps/{name}/errors", s.builderClearErrors)
 	api.HandleFunc("POST /_api/llm", s.llmAsk)
+	api.HandleFunc("GET /_api/connect/devices", s.connectDevices)
+	api.HandleFunc("GET /_api/connect/devices/{id}", s.connectStatus)
+	api.HandleFunc("POST /_api/connect/devices/{id}/{action}", s.connectAction)
 
 	// Plain localhost calls from the appshome CLI.
 	internal := http.NewServeMux()

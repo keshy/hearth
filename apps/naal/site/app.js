@@ -5,7 +5,8 @@ import { observances } from "./js/observances.js";
 import { OPENING, WEEKDAYS } from "./js/content/weekdays.js";
 import { OBSERVANCES, OBSERVANCE_ART } from "./js/content/observances.js";
 import { currentPlace, forgetLocation, locate, timeZone } from "./js/places.js";
-import { createPlayer, musicURL, queueURL } from "./js/player.js";
+import { createPlayer, musicURL } from "./js/player.js";
+import { createRemote, listDevices } from "./js/connect.js";
 
 const $ = (id) => document.getElementById(id);
 const MIN = 60000;
@@ -411,23 +412,45 @@ function renderSongs(w, list) {
   }
   for (const s of w.songs) if (!seen.has(s.id)) { seen.add(s.id); rows.push({ ...s, kriti: s.featured ? `${w.graha.split(" ")[0]}'s kriti` : null }); }
   songs = rows;
-  $("cast-all").href = queueURL(rows.map((s) => s.id));
   $("songs").replaceChildren(...rows.map((s, i) => el("li", { "data-id": s.id, class: s.featured ? "featured" : null },
-    el("button", { type: "button", class: "song", onclick: () => player.play(songs, i) },
+    el("button", { type: "button", class: "song", onclick: () => out.play(songs, i) },
       el("span", { class: "play", "aria-hidden": "true", text: "▶" }),
       el("span", {},
         el("strong", {}, s.title, s.tag ? el("span", { class: "tag", text: s.tag }) : null,
           s.kriti ? el("span", { class: "tag", text: s.kriti }) : null),
         el("span", { class: "by", text: s.by }))),
     el("a", { class: "out", href: musicURL(s.id), target: "_blank", rel: "noopener", title: "Open in YouTube Music", "aria-label": `Open ${s.title} in YouTube Music`, text: "↗" }))));
-  showNow(player.state);
+  showNow(out.state);
 }
 
-const player = createPlayer({ mount: $("yt"), onChange: showNow });
+// Songs play on "out": the in-page player, or a speaker or TV the home
+// server drives (Hearth Connect).
+const local = createPlayer({ mount: $("yt"), onChange: (st) => { if (out === local) showNow(st); } });
+let out = local;
+let devices = [];
 let playerVisible = true;
 
-function showNow({ song, playing }) {
+const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const deviceIcon = (d) => (!d ? "📱" : d.audioOnly ? "🔊" : "📺");
+
+function remoteLine(st) {
+  const name = st.device.name;
+  switch (st.state) {
+    case "loading": return `Starting on ${name}…`;
+    case "buffering": return `Loading on ${name}…`;
+    case "playing": return `Playing on ${name}`;
+    case "paused": return `Paused on ${name}`;
+    case "error": return st.error || `${name} couldn't play this`;
+    default: return st.error || `Finished on ${name}`;
+  }
+}
+
+function showNow(st) {
+  const { song, playing, index, queue } = st;
+  const remote = out !== local;
   $("player").hidden = !song;
+  $("yt").hidden = remote;
+  $("remote").hidden = !remote;
   for (const li of $("songs").children) {
     const on = !!song && li.dataset.id === song.id;
     li.classList.toggle("now", on);
@@ -437,11 +460,24 @@ function showNow({ song, playing }) {
   $("np-title").textContent = song.title;
   $("np-by").textContent = song.by;
   $("dock-title").textContent = `${song.title} · ${song.by}`;
+  $("dock-on").hidden = !remote;
+  if (remote) {
+    $("dock-on").textContent = `${deviceIcon(st.device)} ${st.device.name}`;
+    const art = `https://i.ytimg.com/vi/${song.id}/hqdefault.jpg`;
+    if ($("remote-art").getAttribute("src") !== art) $("remote-art").src = art;
+    $("remote-on").textContent = remoteLine(st);
+    $("remote-on").classList.toggle("bad", st.state === "error");
+    const pct = st.duration ? Math.min(100, (st.position / st.duration) * 100) : 0;
+    $("remote-progress").style.width = `${pct}%`;
+    $("remote-time").textContent = st.duration ? `${clock(st.position)} / ${clock(st.duration)}` : "";
+    const vol = $("remote-volume");
+    vol.parentElement.hidden = st.volume < 0;
+    if (document.activeElement !== vol && st.volume >= 0) vol.value = Math.round(st.volume * 100);
+  }
   for (const b of [$("p-toggle"), $("dock-toggle")]) {
     b.textContent = playing ? "⏸" : "▶";
     b.setAttribute("aria-label", playing ? "Pause" : "Play");
   }
-  const { index, queue } = player.state;
   $("p-prev").disabled = index <= 0;
   $("p-next").disabled = $("dock-next").disabled = index >= queue.length - 1;
   $("np-dock").classList.toggle("playing", playing);
@@ -450,14 +486,101 @@ function showNow({ song, playing }) {
 
 new IntersectionObserver(([e]) => {
   playerVisible = e.isIntersecting;
-  showNow(player.state);
+  showNow(out.state);
 }).observe($("player"));
-$("p-toggle").addEventListener("click", () => player.toggle());
-$("dock-toggle").addEventListener("click", () => player.toggle());
-$("p-prev").addEventListener("click", () => player.prev());
-$("p-next").addEventListener("click", () => player.next());
-$("dock-next").addEventListener("click", () => player.next());
+$("p-toggle").addEventListener("click", () => out.toggle());
+$("dock-toggle").addEventListener("click", () => out.toggle());
+$("p-prev").addEventListener("click", () => out.prev());
+$("p-next").addEventListener("click", () => out.next());
+$("dock-next").addEventListener("click", () => out.next());
 $("dock-open").addEventListener("click", () => $("player").scrollIntoView({ behavior: "smooth", block: "center" }));
+$("remote-volume").addEventListener("change", (e) => out.volume?.(e.target.valueAsNumber / 100));
+setInterval(() => { if (out !== local && out.state.state === "playing") showNow(out.state); }, 1000);
+
+// ---------- Connect to a device ----------
+
+function renderConnect() {
+  const dev = out === local ? null : out.device;
+  $("connect-label").textContent = dev ? dev.name : "This device";
+  $("connect").querySelector(".connect-icon").textContent = deviceIcon(dev);
+  $("connect").classList.toggle("on", !!dev);
+  const row = (d) => {
+    const current = d ? dev?.id === d.id : !dev;
+    const busy = d?.status && ["playing", "paused", "buffering", "loading"].includes(d.status.state) && d.status.song;
+    const sub = !d ? "Plays here, or on this phone's Bluetooth"
+      : busy ? `${d.status.state === "paused" ? "Paused" : "Playing"}: ${d.status.song.title}`
+      : d.model;
+    return el("li", {},
+      el("button", { type: "button", class: current ? "device current" : "device", "aria-pressed": String(current), onclick: () => choose(d) },
+        el("span", { class: "device-icon", "aria-hidden": "true", text: deviceIcon(d) }),
+        el("span", {}, el("strong", { text: d ? d.name : "This device" }), el("span", { class: "by", text: sub })),
+        current ? el("span", { class: "tick", "aria-hidden": "true", text: "✓" }) : null));
+  };
+  $("devices").replaceChildren(row(null), ...devices.map(row));
+}
+
+async function scan(fresh) {
+  $("connect-scan").hidden = false;
+  $("connect-rescan").disabled = true;
+  try {
+    const res = await listDevices(fresh);
+    if (!res) return false;
+    devices = res.devices || [];
+    $("connect-note").textContent = !res.ready && res.problem ? `Speakers aren't ready yet: ${res.problem}`
+      : devices.length ? "" : "No speakers or TVs found. They need to be on the home Wi-Fi and switched on.";
+    renderConnect();
+    return true;
+  } catch (e) {
+    $("connect-note").textContent = `Couldn't look for speakers: ${e.message}`;
+    return true;
+  } finally {
+    $("connect-scan").hidden = true;
+    $("connect-rescan").disabled = false;
+  }
+}
+
+function openPanel(open) {
+  $("connect-panel").hidden = !open;
+  $("connect").setAttribute("aria-expanded", String(open));
+  if (open) { renderConnect(); scan(true); }
+}
+
+// choose moves playback to device d (null for this device), carrying the
+// current song across like a music app does.
+function choose(d) {
+  openPanel(false);
+  if (d ? out.device?.id === d.id : out === local) return;
+  const was = out.state;
+  const carry = was.song && was.playing;
+  if (carry) { if (out === local) local.toggle(); else out.stop(); }
+  if (out !== local) out.close();
+  if (d) {
+    const r = createRemote({ device: d, onChange: (st) => { if (out === r) showNow(st); } });
+    out = r;
+  } else {
+    out = local;
+  }
+  localStorage.setItem("naal.output", d ? JSON.stringify({ id: d.id, name: d.name, audioOnly: d.audioOnly }) : "");
+  renderConnect();
+  if (carry) out.play(was.queue, was.index);
+  showNow(out.state);
+}
+
+$("connect").addEventListener("click", () => openPanel($("connect-panel").hidden));
+$("connect-rescan").addEventListener("click", () => scan(true));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("connect-panel").hidden) openPanel(false); });
+
+(async () => {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("naal.output") || "null"); } catch { /* ignore */ }
+  if (saved?.id) choose(saved); // optimistic: shows the speaker at once
+  if (!(await scan(false))) {
+    if (out !== local) choose(null);
+    return;
+  }
+  $("connect").hidden = false;
+  if (saved?.id && !devices.some((d) => d.id === saved.id)) choose(null);
+})();
 
 function renderUpcoming(k) {
   const today = todayKey();

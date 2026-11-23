@@ -147,6 +147,7 @@ func (c Config) LiveDir() string         { return filepath.Join(c.DataDir, "live
 func (c Config) ReleasesDir() string     { return filepath.Join(c.DataDir, "releases") }
 func (c Config) BuildsDir() string       { return filepath.Join(c.DataDir, "builds") }
 func (c Config) AppDataDir() string      { return filepath.Join(c.DataDir, "appdata") }
+func (c Config) ToolsDir() string        { return filepath.Join(c.DataDir, "tools") }
 func (c Config) StatePath() string       { return filepath.Join(c.DataDir, "state.json") }
 func (c Config) BuilderRepoDir() string  { return filepath.Join(c.DataDir, "builder-repo") }
 

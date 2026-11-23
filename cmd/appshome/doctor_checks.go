@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"appshome/internal/builder"
+	"appshome/internal/cast"
 	"appshome/internal/config"
 	"appshome/internal/deploy"
 	"appshome/internal/registry"
@@ -91,6 +95,35 @@ func checkBuilder(r *report, cfg config.Config) {
 	}
 	if cfg.GitMode() {
 		r.info("the builder pushes to %s; make sure this user can push there", cfg.Branch)
+	}
+}
+
+func checkConnect(r *report, cfg config.Config) {
+	if runtime.GOOS != "darwin" {
+		r.info("needs the macOS host")
+		return
+	}
+	ytdlp := filepath.Join(cfg.ToolsDir(), "yt-dlp")
+	if out, err := exec.Command(ytdlp, "--version").Output(); err != nil {
+		r.warn("yt-dlp isn't installed yet; appshome serve downloads it to %s", cfg.ToolsDir())
+	} else {
+		r.ok("yt-dlp %s", strings.TrimSpace(string(out)))
+	}
+	if _, err := os.Stat(filepath.Join(cfg.ToolsDir(), "deno")); err != nil {
+		r.warn("Deno isn't installed yet; appshome serve downloads it to %s", cfg.ToolsDir())
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	ds, err := cast.Discover(ctx, 2500*time.Millisecond)
+	switch {
+	case err != nil:
+		r.warn("couldn't look for devices: %v", err)
+	case len(ds) == 0:
+		r.info("no Cast speakers or TVs answered on this network")
+	default:
+		for _, d := range ds {
+			r.ok("%s (%s) at %s", d.Name, d.Model, d.Addr)
+		}
 	}
 }
 

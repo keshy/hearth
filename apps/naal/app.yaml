@@ -5,3 +5,4 @@ icon: /icon.svg
 tags: [family]
 # Only site/ is published; test/ holds the Swiss Ephemeris reference checks.
 output: site
+capabilities: [connect]

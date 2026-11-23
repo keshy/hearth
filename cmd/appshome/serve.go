@@ -14,6 +14,7 @@ import (
 	"appshome/internal/builder"
 	"appshome/internal/caddy"
 	"appshome/internal/config"
+	"appshome/internal/connect"
 	"appshome/internal/deploy"
 	"appshome/internal/registry"
 	"appshome/internal/web"
@@ -62,6 +63,9 @@ func cmdServe(args []string) error {
 		engine.Poll(ctx)
 	}()
 	go health.Run(ctx, 30*time.Second)
+	hub := connect.NewHub(ctx, cfg.ToolsDir(), log.New(os.Stderr, "", log.LstdFlags))
+	srv.SetConnect(hub)
+	go hub.Run(ctx)
 
 	hs := &http.Server{Addr: cfg.AppListen, Handler: srv.Handler(), ReadHeaderTimeout: 10 * time.Second}
 	go func() {

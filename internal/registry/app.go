@@ -34,6 +34,9 @@ const (
 	CapBuilder = "builder"
 	// CapLLM lets an app send prompts to the platform's model (/_api/llm).
 	CapLLM = "llm"
+	// CapConnect lets an app find speakers and TVs on the network and play
+	// songs on them (/_api/connect).
+	CapConnect = "connect"
 )
 
 type App struct {
@@ -221,7 +224,7 @@ func (a *App) Clean() error {
 		return errors.New("generated apps can't request capabilities")
 	}
 	for _, c := range a.Capabilities {
-		if c != CapBuilder && c != CapLLM {
+		if c != CapBuilder && c != CapLLM && c != CapConnect {
 			return fmt.Errorf("unknown capability %q", c)
 		}
 	}
