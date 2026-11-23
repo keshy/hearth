@@ -1,0 +1,45 @@
+{{template "head" .}}
+<header class="top">
+  <a class="brand" href="/"><img src="/static/icon.svg" alt="" width="26" height="26">Hearth <span class="sub" style="font-family:var(--font-sans)">feedback</span></a>
+  <div class="spacer"></div>
+  <button class="theme-toggle" data-hearth-theme-toggle></button>
+  <a class="btn ghost" href="/">Deploys</a>
+  <a class="btn ghost" href="{{.PortalURL}}">Open portal</a>
+</header>
+<main class="feedback">
+  <h1>Feedback</h1>
+  <p class="sub">Sent with the Feedback button in each app and on the home page. Stored on this server only, never in the repository.</p>
+  {{if .Apps}}<nav class="fb-apps">{{range .Apps}}<span class="chip">{{.}} · {{index $.Count .}}</span>{{end}}</nav>{{end}}
+
+  <h2>Open</h2>
+  {{if .Open}}{{range .Open}}{{template "fbitem" .}}{{end}}{{else}}<p class="empty">Nothing open. Feedback people send will show up here.</p>{{end}}
+
+  {{if .Done}}
+  <details class="fb-done">
+    <summary><h2>Done ({{len .Done}})</h2></summary>
+    {{range .Done}}{{template "fbitem" .}}{{end}}
+  </details>
+  {{end}}
+</main>
+</body>
+</html>
+
+{{define "fbitem"}}
+<article class="fb{{if not .Seen}} unseen{{end}}{{if .Done}} done{{end}}" id="fb-{{.ID}}">
+  <header>
+    <b>{{.AppTitle}}</b>
+    {{if not .Seen}}<span class="badge">new</span>{{end}}
+    <span class="sub">{{if .Name}}from {{.Name}} · {{end}}{{ago .At}}</span>
+  </header>
+  <p class="fb-msg">{{.Message}}</p>
+  {{if .Image}}<a href="/feedback/images/{{.Image}}" target="_blank" rel="noopener"><img class="fb-img" src="/feedback/images/{{.Image}}" alt="Attached picture" loading="lazy"></a>{{end}}
+  <footer>
+    <span class="sub">{{if .Page}}<a href="{{.Page}}" target="_blank" rel="noopener"><code class="wrap">{{.Page}}</code></a>{{end}}{{if .Theme}} · {{.Theme}}{{end}}{{if .Viewport}} · {{.Viewport}}{{end}}</span>
+    <span class="fb-actions">
+      <form method="post" action="/feedback/{{.ID}}/done"><button class="btn small{{if .Done}} ghost{{end}}">{{if .Done}}Reopen{{else}}Mark done{{end}}</button></form>
+      <form method="post" action="/feedback/{{.ID}}/delete" onsubmit="return confirm('Delete this feedback?')"><button class="btn small danger">Delete</button></form>
+    </span>
+  </footer>
+  {{if .Agent}}<div class="sub fb-agent">{{.Agent}}</div>{{end}}
+</article>
+{{end}}

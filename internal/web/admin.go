@@ -41,13 +41,15 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 		source = s.cfg.RepoURL + " @ " + s.cfg.Branch
 	}
 	s.render(w, http.StatusOK, "admin.html", map[string]any{
-		"PageTitle": "Deploys · " + s.cfg.Domain,
-		"State":     st,
-		"Rows":      rows,
-		"Problems":  problems,
-		"Source":    source,
-		"Poll":      s.cfg.PollSeconds,
-		"Msg":       r.URL.Query().Get("msg"),
+		"PageTitle":  "Deploys · " + s.cfg.Domain,
+		"State":      st,
+		"Rows":       rows,
+		"Problems":   problems,
+		"Source":     source,
+		"Poll":       s.cfg.PollSeconds,
+		"Msg":        r.URL.Query().Get("msg"),
+		"NoFeedback": true,
+		"Unread":     s.feedback().unread(),
 	})
 }
 

@@ -2,6 +2,7 @@
 <header class="top">
   <a class="brand" href="/"><img src="/static/icon.svg" alt="" width="26" height="26">Hearth</a>
   <input id="q" type="search" placeholder="Search apps  ( / )" autocomplete="off" aria-label="Search apps">
+  {{if .Unread}}<a class="fb-unread" href="{{.AdminURL}}/feedback" title="New feedback in the admin inbox">{{.Unread}} new feedback</a>{{end}}
   <button class="theme-toggle" data-hearth-theme-toggle></button>
 </header>
 <main>

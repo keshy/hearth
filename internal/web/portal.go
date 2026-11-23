@@ -59,6 +59,7 @@ func (s *Server) portal(w http.ResponseWriter, r *http.Request) {
 		"Recent":    recent,
 		"Tags":      tags,
 		"Missing":   missing,
+		"Unread":    s.feedback().unread(),
 	})
 }
 

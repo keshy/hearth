@@ -35,6 +35,8 @@ func (s *Server) hearthHandler() http.Handler {
 	mux.HandleFunc("GET /_hearth/theme", s.themeGet)
 	mux.HandleFunc("POST /_hearth/theme", s.themeSet)
 	mux.HandleFunc("POST /_hearth/errors", s.errorReport)
+	mux.HandleFunc("POST /_hearth/feedback", s.feedbackSend)
+	mux.HandleFunc("GET /_hearth/feedback/me", s.feedbackMe)
 	mux.HandleFunc("GET /_hearth/manifest.webmanifest", s.webManifest)
 	mux.HandleFunc("GET /_hearth/icons/{file}", s.manifestIcon)
 	return mux

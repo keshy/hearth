@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -42,6 +43,8 @@ type Server struct {
 	llmLimit llmLimiter
 	errs     errorStore
 	pngs     pngCache
+	fb       *feedbackStore
+	fbOnce   sync.Once
 }
 
 func New(ctx context.Context, cfg config.Config, engine *deploy.Engine, health *Health, b *builder.Builder, reload func() error, logger *log.Logger) (*Server, error) {
@@ -75,6 +78,9 @@ func (s *Server) Handler() http.Handler {
 	admin.HandleFunc("GET /{$}", s.dashboard)
 	admin.HandleFunc("POST /deploy", s.deployNow)
 	admin.HandleFunc("GET /logs/{name}", s.buildLog)
+	admin.HandleFunc("GET /feedback", s.feedbackInbox)
+	admin.HandleFunc("GET /feedback/images/{file}", s.feedbackImage)
+	admin.HandleFunc("POST /feedback/{id}/{action}", s.feedbackChange)
 	adminH := s.requireAdmin(sameOrigin(admin))
 
 	// Reached only through Caddy's per-app /_api/* route, which sets the app header.

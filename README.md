@@ -83,6 +83,22 @@ together:
   `/_hearth/errors` (rate limited, kept in memory). The App Builder shows them
   per app.
 
+### Feedback
+
+`hearth.js` puts a Feedback button beside the theme toggle in every app and on
+the portal (floating in the corner if an app has no toggle). It opens a short
+form: what's working or not, an optional name (remembered on the device, with
+names the family has used offered as chips), and an optional screenshot or
+photo, shrunk to a JPEG on the device. It also sends the page address,
+light or dark mode, window size and browser, and says so on the form.
+
+Feedback is posted to `/_hearth/feedback` and kept in
+`<data>/feedback/` on the server (never in the repo, at most 500 items).
+Read it at `admin.<domain>/feedback`, where items can be marked done or
+deleted. The portal shows a "new feedback" badge until the inbox is opened.
+An app can open the form itself with `hearth.feedback("optional text")`, or
+leave the button out with `<html data-hearth-feedback="off">`.
+
 ### Installing an app on a phone
 
 Every app that loads `/_hearth/hearth.js` is installable: the script links a
