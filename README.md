@@ -271,6 +271,10 @@ detected at runtime, and the DNS server restarts itself if the IP changes.
 | `appshome caddyfile` | Print the generated Caddy config |
 | `appshome check [--repo DIR]` | Validate app manifests and re-check generated apps against the guardrails |
 
+Admin password hint (user `admin`): the first, primordial power, as one
+lowercase word. Forgot it anyway? On the mini, run
+`appshome set-password --data /opt/homebrew/var/apps-home`.
+
 ## CI and releases
 
 Every push and pull request runs `.github/workflows/ci.yml`: formatting,
