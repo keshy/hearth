@@ -41,6 +41,7 @@ type Server struct {
 
 	llmLimit llmLimiter
 	errs     errorStore
+	pngs     pngCache
 }
 
 func New(ctx context.Context, cfg config.Config, engine *deploy.Engine, health *Health, b *builder.Builder, reload func() error, logger *log.Logger) (*Server, error) {

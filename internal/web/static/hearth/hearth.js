@@ -1,7 +1,8 @@
 /* Hearth platform script, served at /_hearth/hearth.js on every app.
    Load it in <head> (not as a module) so the theme applies before paint:
      <script src="/_hearth/hearth.js"></script>
-   It sets data-theme on <html>, wires every [data-hearth-theme-toggle], and
+   It sets data-theme on <html>, wires every [data-hearth-theme-toggle],
+   links the platform's web app manifest so the app can be installed, and
    reports uncaught errors to the platform so the builder can show them. */
 (function () {
   "use strict";
@@ -83,6 +84,20 @@
       })
       .catch(function () {});
   }
+
+  // An app's own manifest or touch icon wins over the platform's.
+  function addLink(rel, href) {
+    var head = document.head || document.getElementsByTagName("head")[0];
+    if (!head || document.querySelector('link[rel="' + rel + '"]')) return;
+    var l = document.createElement("link");
+    l.rel = rel;
+    l.href = href;
+    // Private apps sit behind the admin password; the manifest fetch must send it.
+    if (rel === "manifest") l.crossOrigin = "use-credentials";
+    head.appendChild(l);
+  }
+  addLink("manifest", "/_hearth/manifest.webmanifest");
+  addLink("apple-touch-icon", "/_hearth/icons/180.png");
 
   apply();
   if (mq) {

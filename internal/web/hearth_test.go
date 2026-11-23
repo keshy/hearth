@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"encoding/json"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -159,6 +160,70 @@ func TestAppIconStaysInsideTheRelease(t *testing.T) {
 	}
 	if w := do(s, "GET", "/icons/builder", "", "", nil); w.Code != http.StatusNotFound {
 		t.Fatalf("link app: %d", w.Code)
+	}
+}
+
+func TestEveryAppGetsAWebAppManifest(t *testing.T) {
+	s, cfg := hearthServer(t)
+	icon := `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#12b76a"/></svg>`
+	os.WriteFile(filepath.Join(cfg.LiveDir(), "notes", "icon.svg"), []byte(icon), 0o644)
+
+	w := do(s, "GET", "/_hearth/manifest.webmanifest", "notes", "", nil)
+	var m webAppManifest
+	if err := json.Unmarshal(w.Body.Bytes(), &m); err != nil || w.Code != 200 {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	if w.Header().Get("Content-Type") != "application/manifest+json" || m.Name != "Notes" || m.Display != "standalone" || m.StartURL != "/" {
+		t.Fatalf("manifest: %+v", m)
+	}
+	srcs := map[string]bool{}
+	for _, i := range m.Icons {
+		srcs[i.Src] = true
+	}
+	if !srcs["/_hearth/icons/192.png"] || !srcs["/_hearth/icons/512.png"] || !srcs["/icon.svg"] {
+		t.Fatalf("icons: %+v", m.Icons)
+	}
+
+	w = do(s, "GET", "/_hearth/icons/512.png", "notes", "", nil)
+	img, err := png.Decode(w.Body)
+	if err != nil || w.Code != 200 || img.Bounds().Dx() != 512 {
+		t.Fatalf("512 icon: %d %v", w.Code, err)
+	}
+	if _, _, _, a := img.At(256, 256).RGBA(); a == 0 {
+		t.Error("the icon rendered transparent")
+	}
+	if _, _, _, a := img.At(0, 0).RGBA(); a == 0 {
+		t.Error("icons should be full-bleed so launchers can mask them")
+	}
+	if w := do(s, "GET", "/_hearth/icons/64.png", "notes", "", nil); w.Code != http.StatusNotFound {
+		t.Errorf("unknown size: %d", w.Code)
+	}
+	if w := do(s, "GET", "/_hearth/icons/192.png", "sneaky", "", nil); w.Code != http.StatusNotFound || strings.Contains(w.Body.String(), "secret") {
+		t.Errorf("traversal: %d", w.Code)
+	}
+	if w := do(s, "GET", "/_hearth/manifest.webmanifest", "ghost", "", nil); w.Code != http.StatusNotFound {
+		t.Errorf("unknown app: %d", w.Code)
+	}
+
+	onHost := func(host, path string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest("GET", path, nil)
+		r.Host = host
+		w := httptest.NewRecorder()
+		s.Handler().ServeHTTP(w, r)
+		return w
+	}
+	if w := onHost(cfg.Domain, "/_hearth/manifest.webmanifest"); w.Code != 200 || !strings.Contains(w.Body.String(), `"Hearth"`) {
+		t.Errorf("portal manifest: %d %s", w.Code, w.Body)
+	}
+	if w := onHost(cfg.Domain, "/_hearth/icons/192.png"); w.Code != 200 || w.Header().Get("Content-Type") != "image/png" {
+		t.Errorf("portal icon: %d", w.Code)
+	}
+	if w := onHost(cfg.AdminHost(), "/_hearth/manifest.webmanifest"); w.Code != http.StatusNotFound {
+		t.Errorf("the admin page isn't an installable app: %d", w.Code)
+	}
+
+	if js := do(s, "GET", "/_hearth/hearth.js", "notes", "", nil).Body.String(); !strings.Contains(js, "/_hearth/manifest.webmanifest") {
+		t.Error("hearth.js must link the manifest")
 	}
 }
 

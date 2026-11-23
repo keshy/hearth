@@ -83,6 +83,15 @@ together:
   `/_hearth/errors` (rate limited, kept in memory). The App Builder shows them
   per app.
 
+### Installing an app on a phone
+
+Every app that loads `/_hearth/hearth.js` is installable: the script links a
+web app manifest that the platform builds from `app.yaml` (title,
+description, icon), with PNG icons rendered from the app's SVG icon. On
+Android, open the app in Chrome and use ⋮ → Install app; on iOS, Share → Add
+to Home Screen. The device must trust the house certificate first. An app
+that ships its own `<link rel="manifest">` keeps it.
+
 ### Shared data for static apps
 
 Every static or hybrid app gets a tiny key-value store at `/_api/data/<key>`

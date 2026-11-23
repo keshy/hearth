@@ -35,6 +35,8 @@ func (s *Server) hearthHandler() http.Handler {
 	mux.HandleFunc("GET /_hearth/theme", s.themeGet)
 	mux.HandleFunc("POST /_hearth/theme", s.themeSet)
 	mux.HandleFunc("POST /_hearth/errors", s.errorReport)
+	mux.HandleFunc("GET /_hearth/manifest.webmanifest", s.webManifest)
+	mux.HandleFunc("GET /_hearth/icons/{file}", s.manifestIcon)
 	return mux
 }
 
@@ -219,17 +221,8 @@ func (s *Server) appIcon(w http.ResponseWriter, r *http.Request) {
 			app, found = a, true
 		}
 	}
-	if !found || !strings.HasPrefix(app.Icon, "/") || app.Kind == registry.KindLink || app.Kind == registry.KindProxied {
-		http.NotFound(w, r)
-		return
-	}
-	root := s.engine.LiveDir(name)
-	p := filepath.Join(root, filepath.FromSlash(filepath.Clean("/"+strings.TrimPrefix(app.Icon, "/"))))
-	if rel, err := filepath.Rel(root, p); err != nil || strings.HasPrefix(rel, "..") {
-		http.NotFound(w, r)
-		return
-	}
-	if fi, err := os.Stat(p); err != nil || fi.IsDir() || fi.Size() > 512<<10 {
+	p, ok := s.iconFile(app)
+	if !found || !ok {
 		http.NotFound(w, r)
 		return
 	}
@@ -238,4 +231,20 @@ func (s *Server) appIcon(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	http.ServeFile(w, r, p)
+}
+
+// iconFile is the app's local icon inside its live release, if it has one.
+func (s *Server) iconFile(app registry.App) (string, bool) {
+	if !strings.HasPrefix(app.Icon, "/") || !app.NeedsSite() {
+		return "", false
+	}
+	root := s.engine.LiveDir(app.Name)
+	p := filepath.Join(root, filepath.FromSlash(filepath.Clean("/"+strings.TrimPrefix(app.Icon, "/"))))
+	if rel, err := filepath.Rel(root, p); err != nil || strings.HasPrefix(rel, "..") {
+		return "", false
+	}
+	if fi, err := os.Stat(p); err != nil || fi.IsDir() || fi.Size() > 512<<10 {
+		return "", false
+	}
+	return p, true
 }
