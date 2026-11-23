@@ -391,7 +391,7 @@ function storyBlock() {
   const story = state.stories[key];
   const box = el("div", { class: "story", id: "story" });
   if (story?.paragraphs) {
-    box.append(el("h3", { text: `✨ ${story.title || "Your chart as a story"}` }), story.paragraphs.map((p) => el("p", { text: p })),
+    box.append(el("h3", { text: `✨ ${story.title || "Your chart as a story"}` }), ...story.paragraphs.map((p) => el("p", { text: p })),
       el("p", { class: "note", text: `Written by ${story.model || "Gemini"} from the facts above.` }));
     return box;
   }
