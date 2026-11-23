@@ -5,6 +5,7 @@ import { observances } from "./js/observances.js";
 import { OPENING, WEEKDAYS } from "./js/content/weekdays.js";
 import { OBSERVANCES, OBSERVANCE_ART } from "./js/content/observances.js";
 import { currentPlace, forgetLocation, locate, timeZone } from "./js/places.js";
+import { createPlayer, musicURL, queueURL } from "./js/player.js";
 
 const $ = (id) => document.getElementById(id);
 const MIN = 60000;
@@ -396,6 +397,8 @@ for (const b of document.querySelectorAll(".script-toggle button")) {
   });
 }
 
+let songs = [];
+
 function renderSongs(w, list) {
   const seen = new Set();
   const rows = [];
@@ -406,15 +409,55 @@ function renderSongs(w, list) {
       rows.push({ ...s, tag: o.info.name });
     }
   }
-  for (const s of w.songs) if (!seen.has(s.id)) { seen.add(s.id); rows.push(s); }
-  $("songs").replaceChildren(...rows.map((s) => el("li", {},
-    el("a", { href: `https://music.youtube.com/watch?v=${s.id}`, target: "_blank", rel: "noopener", class: s.featured ? "featured" : null },
+  for (const s of w.songs) if (!seen.has(s.id)) { seen.add(s.id); rows.push({ ...s, kriti: s.featured ? `${w.graha.split(" ")[0]}'s kriti` : null }); }
+  songs = rows;
+  $("cast-all").href = queueURL(rows.map((s) => s.id));
+  $("songs").replaceChildren(...rows.map((s, i) => el("li", { "data-id": s.id, class: s.featured ? "featured" : null },
+    el("button", { type: "button", class: "song", onclick: () => player.play(songs, i) },
       el("span", { class: "play", "aria-hidden": "true", text: "▶" }),
       el("span", {},
         el("strong", {}, s.title, s.tag ? el("span", { class: "tag", text: s.tag }) : null,
-          s.featured ? el("span", { class: "tag", text: `${w.graha.split(" ")[0]}'s kriti` }) : null),
-        el("span", { class: "by", text: s.by }))))));
+          s.kriti ? el("span", { class: "tag", text: s.kriti }) : null),
+        el("span", { class: "by", text: s.by }))),
+    el("a", { class: "out", href: musicURL(s.id), target: "_blank", rel: "noopener", title: "Open in YouTube Music", "aria-label": `Open ${s.title} in YouTube Music`, text: "↗" }))));
+  showNow(player.state);
 }
+
+const player = createPlayer({ mount: $("yt"), onChange: showNow });
+let playerVisible = true;
+
+function showNow({ song, playing }) {
+  $("player").hidden = !song;
+  for (const li of $("songs").children) {
+    const on = !!song && li.dataset.id === song.id;
+    li.classList.toggle("now", on);
+    li.querySelector(".play").textContent = on && playing ? "⏸" : "▶";
+  }
+  if (!song) { $("np-dock").hidden = true; return; }
+  $("np-title").textContent = song.title;
+  $("np-by").textContent = song.by;
+  $("dock-title").textContent = `${song.title} · ${song.by}`;
+  for (const b of [$("p-toggle"), $("dock-toggle")]) {
+    b.textContent = playing ? "⏸" : "▶";
+    b.setAttribute("aria-label", playing ? "Pause" : "Play");
+  }
+  const { index, queue } = player.state;
+  $("p-prev").disabled = index <= 0;
+  $("p-next").disabled = $("dock-next").disabled = index >= queue.length - 1;
+  $("np-dock").classList.toggle("playing", playing);
+  $("np-dock").hidden = playerVisible;
+}
+
+new IntersectionObserver(([e]) => {
+  playerVisible = e.isIntersecting;
+  showNow(player.state);
+}).observe($("player"));
+$("p-toggle").addEventListener("click", () => player.toggle());
+$("dock-toggle").addEventListener("click", () => player.toggle());
+$("p-prev").addEventListener("click", () => player.prev());
+$("p-next").addEventListener("click", () => player.next());
+$("dock-next").addEventListener("click", () => player.next());
+$("dock-open").addEventListener("click", () => $("player").scrollIntoView({ behavior: "smooth", block: "center" }));
 
 function renderUpcoming(k) {
   const today = todayKey();

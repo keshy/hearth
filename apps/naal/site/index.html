@@ -140,9 +140,28 @@
       </section>
 
       <section class="card listen" aria-labelledby="listen-h">
-        <h2 id="listen-h">Listen</h2>
+        <div class="listen-head">
+          <h2 id="listen-h">Listen</h2>
+          <a class="ghost small" id="cast-all" target="_blank" rel="noopener">📺 Play on a TV or speaker</a>
+        </div>
+        <div class="player" id="player" hidden>
+          <div class="player-video" id="yt"></div>
+          <div class="player-bar">
+            <div class="np"><strong id="np-title"></strong><span id="np-by"></span></div>
+            <div class="controls">
+              <button type="button" class="ghost" id="p-prev" aria-label="Previous song">⏮</button>
+              <button type="button" class="primary" id="p-toggle" aria-label="Pause">⏸</button>
+              <button type="button" class="ghost" id="p-next" aria-label="Next song">⏭</button>
+            </div>
+          </div>
+        </div>
         <ul class="songs" id="songs"></ul>
-        <p class="note">Opens in YouTube Music. Turn the screen off and let it play.</p>
+        <details class="speakers">
+          <summary>Bluetooth speakers and TVs</summary>
+          <p><strong>Bluetooth:</strong> songs play through whatever this phone or laptop is connected to. Pair the speaker in the device's Bluetooth settings, then press play here.</p>
+          <p><strong>TV, Chromecast or Nest speaker:</strong> on Android and in Chrome, the player shows its own Cast button when one is on the home Wi-Fi. On an iPhone, open the video full screen and use AirPlay. Or tap “Play on a TV or speaker” to open the whole list in YouTube and cast from there.</p>
+          <p>The screen stays on while a song plays here, because a locked phone pauses web pages. To listen with the screen off, use the ↗ next to a song to open it in YouTube Music.</p>
+        </details>
       </section>
     </div>
 
@@ -160,6 +179,12 @@
     </p>
     <p class="note">Panchangam calculated on this device (Lahiri ayanamsa). Festival dates follow common Tamil practice; your family's calendar has the final word.</p>
   </footer>
+
+  <div class="np-dock" id="np-dock" hidden>
+    <button type="button" class="np-open" id="dock-open"><span class="eq" aria-hidden="true"></span><span id="dock-title"></span></button>
+    <button type="button" class="ghost" id="dock-toggle" aria-label="Pause">⏸</button>
+    <button type="button" class="ghost" id="dock-next" aria-label="Next song">⏭</button>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>
