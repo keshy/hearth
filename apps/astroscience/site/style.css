@@ -343,3 +343,32 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .area-why li::before { content: "· "; }
 .area-why li.up::before { content: "+ "; color: var(--good); }
 .area-why li.down::before { content: "− "; color: var(--bad); }
+
+/* ---------- profiles ---------- */
+.profiles { max-width: 80rem; margin: 0.6rem auto 0; margin-inline: clamp(0.8rem, 3vw, 2rem); padding-block: 0.8rem; }
+@media (min-width: 84rem) { .profiles { margin-inline: auto; } }
+.profiles-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.profiles-head h2 { margin: 0; font-size: 1rem; flex: 1; min-width: 8rem; }
+.profiles-head h2 .note { font-family: var(--sans, inherit); font-weight: 400; margin-left: 0.3rem; }
+.profiles-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ghost.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+.profiles-body { display: grid; gap: 0.5rem; margin-top: 0.6rem; }
+.profiles-body .kicker { margin-top: 0.3rem; }
+.pchips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pchip {
+  display: inline-flex; align-items: baseline; gap: 0.4rem; padding: 0.35rem 0.8rem; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--well); color: var(--ink); font-size: 0.88rem;
+}
+.pchip small { color: var(--muted); font-size: 0.72rem; }
+.pchip:hover { border-color: var(--gold-line); }
+.pchip[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
+.pchip[aria-pressed="true"] small { color: var(--on-gold); opacity: 0.8; }
+.pchip.trad b::before { content: "✦ "; color: var(--gold); }
+.pchip.trad[aria-pressed="true"] b::before { color: var(--on-gold); }
+.profiles .source { margin: 0.7rem 0 0; padding: 0.55rem 0.8rem; border-radius: 12px; background: var(--gold-soft); border: 1px solid var(--gold-line); color: var(--ink); }
+.fixed-note { margin: 0; }
+.profiles-toggle { display: none; }
+@media (max-width: 640px) {
+  .profiles-toggle { display: inline-flex; }
+  .profiles:not(.open) .profiles-body { display: none; }
+}

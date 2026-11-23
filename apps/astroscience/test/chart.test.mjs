@@ -1,10 +1,11 @@
 // Chart logic, dasha and reverse search. Run: node apps/astroscience/test/chart.test.mjs
-import { analyze, dashaTimeline, houseFrom, nakshatraOf, navamsaOf } from "../site/js/chart.js";
+import { analyze, analyzeFixed, dashaTimeline, houseFrom, nakshatraOf, navamsaOf } from "../site/js/chart.js";
 import { interpretOffline, sanitize } from "../site/js/interpret.js";
 import { GRAHAS, ORDER, SIGNS } from "../site/js/knowledge.js";
 import { CITIES, offsetMinutes, utcToZoned, zonedToUtc } from "../site/js/places.js";
 import { scoreChart, search } from "../site/js/search.js";
 import { houseScores, reading, storyFacts, tabTakeaway } from "../site/js/reading.js";
+import { EXAMPLES, MAX_PROFILES, cleanList, cleanProfile, removeProfile, sameBirth, upsert } from "../site/js/profiles.js";
 
 let failures = 0;
 const check = (name, ok, extra = "") => {
@@ -114,6 +115,47 @@ check("search is fast enough", took < 20000, `${took} ms`);
     if (/undefined|NaN|\[object/.test(txt) || JSON.stringify(storyFacts(cc, rr, "")).length >= 4000) bad++;
   }
   check("200 random charts read cleanly", bad === 0, `${bad} bad`);
+}
+
+// Profiles: validation and the 20-profile limit.
+{
+  const p = { name: "Asha", d: "1990-01-15", t: "06:30", place: "Chennai" };
+  check("a good profile is kept", cleanProfile(p)?.name === "Asha" && /^[a-z0-9]+$/.test(cleanProfile(p).id));
+  check("bad profiles are dropped", [
+    { ...p, name: "" }, { ...p, d: "15/01/1990" }, { ...p, t: "6:30am" }, { ...p, place: { lat: 95, lon: 0 } }, null, "x",
+  ].every((x) => cleanProfile(x) === null));
+  check("custom places keep their coordinates", cleanProfile({ ...p, place: { name: "Vadnagar", lat: 23.785, lon: 72.64, tz: "Asia/Kolkata" } }).place.lat === 23.785);
+  let list = [];
+  for (let i = 0; i < MAX_PROFILES; i++) list = upsert(list, { ...p, name: `P${i}`, id: `id${String(i).padStart(4, "0")}` });
+  let full = false;
+  try { upsert(list, { ...p, name: "one more" }); } catch (e) { full = /up to 20/.test(e.message); }
+  check("no more than 20 profiles", list.length === 20 && full);
+  const edited = upsert(list, { ...list[3], t: "07:00" });
+  check("saving an existing profile updates it in place", edited.length === 20 && edited[3].t === "07:00" && edited[3].id === list[3].id);
+  check("delete", removeProfile(edited, list[3].id).length === 19);
+  check("a stored list is cleaned and capped", cleanList([...list, ...list, { junk: 1 }]).length === 20);
+  check("sameBirth notices changes", sameBirth(list[0], { ...list[0] }) && !sameBirth(list[0], { ...list[0], t: "09:00" }));
+}
+
+// Example charts match what their sources describe.
+{
+  const ex = Object.fromEntries(EXAMPLES.map((e) => [e.id, e]));
+  const rama = analyzeFixed(ex.rama);
+  const exalted = ORDER.filter((g) => rama.planets[g].dignity === "exalted");
+  check("Rama: Cancer lagna, Moon and Jupiter in it, Punarvasu pada 4",
+    rama.lagna.sign === 3 && rama.planets.moon.house === 1 && rama.planets.jupiter.house === 1 && rama.star.sanskrit === "Punarvasu" && rama.star.pada === 4);
+  check("Rama: five planets exalted", ["sun", "mars", "jupiter", "venus", "saturn"].every((g) => exalted.includes(g)), exalted.join(" "));
+  const krishna = analyzeFixed(ex.krishna);
+  check("Krishna: Taurus lagna, Moon exalted in Rohini", krishna.lagna.sign === 1 && krishna.planets.moon.dignity === "exalted" && krishna.star.sanskrit === "Rohini");
+  check("Ketu is opposite Rahu in fixed charts", Math.abs(((krishna.planets.ketu.lon - krishna.planets.rahu.lon + 360) % 360) - 180) < 1e-9);
+  const NO_DATE = Date.UTC(-3000, 0, 1);
+  const rr = reading(rama, dashaTimeline(NO_DATE, rama.planets.moon.lon), { name: "Sri Rama", now: -Infinity });
+  check("a traditional chart reads cleanly, with no current period", !rr.current && !/undefined|NaN/.test(JSON.stringify(rr)) && rr.takeaways.length >= 5);
+  const born = (e) => { const [y, m, d] = e.d.split("-").map(Number); const [h, mi] = e.t.split(":").map(Number); return analyze(zonedToUtc(y, m, d, h, mi, e.place.tz), e.place); };
+  const modi = born(ex.modi);
+  check("Modi: Scorpio lagna, Moon in Scorpio (as published)", modi.lagna.sign === 7 && modi.planets.moon.sign === 7, `${SIGNS[modi.lagna.sign].en} / ${SIGNS[modi.planets.moon.sign].en}`);
+  const viv = born(ex.vivekananda);
+  check("Vivekananda: Sagittarius lagna, Moon in Virgo (as published)", viv.lagna.sign === 8 && viv.planets.moon.sign === 5, `${SIGNS[viv.lagna.sign].en} / ${SIGNS[viv.planets.moon.sign].en}`);
 }
 
 if (failures) process.exit(1);

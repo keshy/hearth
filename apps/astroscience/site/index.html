@@ -30,7 +30,24 @@
     </div>
   </header>
 
+  <section class="profiles card" id="profiles" aria-label="Profiles">
+    <div class="profiles-head">
+      <h2>Profiles <span class="note" id="profiles-count"></span></h2>
+      <div class="profiles-actions" id="profiles-actions"></div>
+      <button type="button" class="ghost small profiles-toggle" id="profiles-toggle" aria-expanded="false">People</button>
+    </div>
+    <div class="profiles-body">
+      <div class="pchips" id="profiles-mine"></div>
+      <p class="kicker">Famous charts to learn from</p>
+      <div class="pchips" id="profiles-examples"></div>
+      <p class="note">Profiles are saved on the home server, not in the code repository, and every device at home sees them.</p>
+    </div>
+    <p class="note source" id="profile-source" hidden></p>
+  </section>
+
   <section class="birth card" aria-label="Birth details">
+    <p class="note fixed-note" id="fixed-note" hidden>A traditional chart is given by where the planets were, not by a date, so there's no birth time to change and the dasha timeline shows ages instead of years.</p>
+    <div id="birth-fields">
     <div class="fields">
       <label>Name <input id="f-name" placeholder="optional" maxlength="40"></label>
       <label>Date <input id="f-date" type="date" required></label>
@@ -53,6 +70,7 @@
       <input id="f-scrub" type="range" min="-720" max="720" step="4" value="0" aria-label="Shift the birth time">
       <output id="scrub-out">birth time</output>
       <p class="hint">Slide to shift the time and watch the lagnam (ascendant) move through all 12 signs in a day. That's why birth time matters.</p>
+    </div>
     </div>
   </section>
 

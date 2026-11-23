@@ -63,7 +63,25 @@ export function aspectedHouses(g, house, includeNodeTrines = false) {
 
 // The full reading for an instant and place.
 export function analyze(ms, place, opts = {}) {
-  const pos = positions(ms, place, !opts.fast);
+  return chartFrom(positions(ms, place, !opts.fast), ms, place, opts);
+}
+
+// A chart given by its placements instead of a birth moment, as traditional
+// charts (Rama's in the Valmiki Ramayana, say) are. Longitudes are sidereal
+// degrees; Ketu is always opposite Rahu.
+export function analyzeFixed(fixed, opts = {}) {
+  const grahas = {};
+  for (const g of ORDER) {
+    const lon = g === "ketu" ? norm(fixed.planets.rahu + 180) : norm(fixed.planets[g]);
+    grahas[g] = { lon, retro: (fixed.retro || []).includes(g), speed: g === "rahu" || g === "ketu" ? -0.053 : 1 };
+  }
+  const c = chartFrom({ lagna: norm(fixed.lagna), grahas }, null, null, opts);
+  c.fixed = true;
+  return c;
+}
+const norm = (x) => ((x % 360) + 360) % 360;
+
+function chartFrom(pos, ms, place, opts) {
   const lagnaSign = signOf(pos.lagna);
   const signs = {};
   for (const g of ORDER) signs[g] = signOf(pos.grahas[g].lon);

@@ -124,7 +124,7 @@ model today" and fall back; `apps/astroscience` does.
 | --- | --- |
 | `groceries` | Shared shopping list; the hand-written example of `/_api/data`. |
 | `naal` | Today in a Tamil home: panchangam computed in the browser, festivals, weekday prayers and music. |
-| `astroscience` | Learn Tamil astrology with a live chart. Opens on a step-by-step reading (each takeaway with its evidence and a link to the rule behind it), life areas ranked by support, the current dasha period, and an optional Gemini retelling; then the mechanics (grahas, houses, aspects, yogas), a cheat sheet and a reverse search ("find a moment"). |
+| `astroscience` | Learn Tamil astrology with a live chart. Opens on a step-by-step reading (each takeaway with its evidence and a link to the rule behind it), life areas ranked by support, the current dasha period, and an optional Gemini retelling; then the mechanics (grahas, houses, aspects, yogas), a cheat sheet and a reverse search ("find a moment"). Up to 20 saved birth profiles live in the app's data on the server (`<data>/appdata/astroscience/profiles.json`), never in this repository; famous example charts (Rama, Krishna, Modi, Vivekananda) ship with the app. |
 | `builder` | The App Builder: build, change, preview, troubleshoot and roll back apps. |
 | `router` | A link to the router's admin page. |
 

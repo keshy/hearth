@@ -1,4 +1,4 @@
-import { analyze, compoundRelation, dashaTimeline, dms, explainHouse, explainPlanet, houseFrom } from "./js/chart.js";
+import { analyze, analyzeFixed, compoundRelation, dashaTimeline, dms, explainHouse, explainPlanet, houseFrom } from "./js/chart.js";
 import { interpret } from "./js/interpret.js";
 import {
   DASHA_ORDER, DIGNITY, GLOSSARY, GRAHAS, HOUSES, HOUSE_GROUPS, NAKSHATRAS, ORDER, SIGNS, label, naturalRelation, ordinal, signLabel,
@@ -6,9 +6,13 @@ import {
 import { CITIES, defaultCity, deviceZone, formatZoned, utcToZoned, zonedToUtc } from "./js/places.js";
 import { describe } from "./js/search.js";
 import { reading, tabTakeaway, storyFacts, STORY_SYSTEM } from "./js/reading.js";
+import { EXAMPLES as PEOPLE, MAX_PROFILES, changeProfiles, exampleById, loadProfiles, newId, removeProfile, sameBirth, upsert } from "./js/profiles.js";
 
 const $ = (id) => document.getElementById(id);
 const YEAR_MS = 365.25 * 86400000;
+// Traditional charts have no birth date; their dasha is shown as ages from
+// this stand-in birth, which is far enough back that "now" is never inside it.
+const NO_DATE = Date.UTC(-3000, 0, 1);
 // Fixed sign positions of the South Indian chart: [col, row].
 const CELL = { 11: [0, 0], 0: [1, 0], 1: [2, 0], 2: [3, 0], 3: [3, 1], 4: [3, 2], 5: [3, 3], 6: [2, 3], 7: [1, 3], 8: [0, 3], 9: [0, 2], 10: [0, 1] };
 
@@ -29,7 +33,13 @@ const state = {
   tour: 0,
   areaOrder: "rank",
   stories: {},
+  profiles: [],
+  profilesError: null,
+  profileId: null, // the saved profile on screen, if any
+  example: null, // the example on screen, if any
+  fixed: null, // a traditional chart (placements, no birth time)
 };
+let customName = "";
 
 if (location.hostname.split(".").length > 2) $("portal-link").href = `${location.protocol}//${location.host.split(".").slice(1).join(".")}/`;
 
@@ -69,6 +79,13 @@ for (const c of CITIES) placeSel.append(el("option", { value: c.name, text: `${c
 placeSel.append(el("option", { value: "__custom", text: "Custom latitude / longitude…" }));
 const zones = Intl.supportedValuesOf ? Intl.supportedValuesOf("timeZone") : [...new Set(CITIES.map((c) => c.tz))];
 for (const z of zones) $("f-tz").append(el("option", { value: z, text: z }));
+// Browsers list some zones under older names (Chrome has Asia/Calcutta, not
+// Asia/Kolkata), so a saved or linked zone may be missing from the list.
+function setZone(z) {
+  const sel = $("f-tz");
+  if (z && ![...sel.options].some((o) => o.value === z)) sel.append(el("option", { value: z, text: z }));
+  sel.value = z || deviceZone();
+}
 
 function setNow() {
   const z = utcToZoned(Date.now(), state.place.tz);
@@ -79,7 +96,7 @@ function setNow() {
 function readPlace() {
   if (placeSel.value !== "__custom") return CITIES.find((c) => c.name === placeSel.value) || state.place;
   const lat = Number($("f-lat").value), lon = Number($("f-lon").value);
-  return { name: `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`, lat, lon, tz: $("f-tz").value || deviceZone() };
+  return { name: customName || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`, lat, lon, tz: $("f-tz").value || deviceZone() };
 }
 
 function birthMs() {
@@ -95,7 +112,7 @@ function fromURL() {
     placeSel.value = "__custom";
     $("f-lat").value = q.get("lat");
     $("f-lon").value = q.get("lon");
-    $("f-tz").value = q.get("tz") || deviceZone();
+    setZone(q.get("tz") || deviceZone());
   } else if (q.get("p") && CITIES.some((c) => c.name === q.get("p"))) {
     placeSel.value = q.get("p");
   } else {
@@ -115,6 +132,13 @@ function fromURL() {
 function shareURL() {
   const u = new URL(location.href);
   u.search = "";
+  if (state.fixed) {
+    u.searchParams.set("ex", state.fixed.id);
+    u.hash = location.hash;
+    return u;
+  }
+  if (state.profileId) u.searchParams.set("pr", state.profileId);
+  else if (state.example) u.searchParams.set("ex", state.example.id);
   u.searchParams.set("d", $("f-date").value);
   u.searchParams.set("t", $("f-time").value);
   if (placeSel.value === "__custom") {
@@ -131,6 +155,18 @@ function shareURL() {
 
 // ---------- compute ----------
 function recompute({ keepSelection = true } = {}) {
+  if (state.fixed) {
+    state.chart = analyzeFixed(state.fixed, { nodeTrines: state.trines });
+    state.chart.ms = NO_DATE;
+    state.dasha = dashaTimeline(NO_DATE, state.chart.planets.moon.lon);
+    state.reading = reading(state.chart, state.dasha, { name: state.fixed.name, now: -Infinity });
+    if (!keepSelection) state.selected = null;
+    state.tour = Math.min(state.tour, state.reading.takeaways.length - 1);
+    history.replaceState(null, "", shareURL());
+    renderProfiles();
+    renderAll();
+    return;
+  }
   const base = birthMs();
   if (base === null) return;
   const ms = base + state.scrub * 60000;
@@ -143,6 +179,7 @@ function recompute({ keepSelection = true } = {}) {
     ? `${state.scrub > 0 ? "+" : "−"}${Math.floor(Math.abs(state.scrub) / 60)}h ${String(Math.abs(state.scrub) % 60).padStart(2, "0")}m · ${formatZoned(ms, state.place.tz, { timeStyle: "short" })}`
     : "birth time";
   history.replaceState(null, "", shareURL());
+  renderProfiles();
   renderAll();
 }
 
@@ -216,8 +253,8 @@ function drawChart() {
   const name = $("f-name").value.trim();
   root.append(svg("text", { x: 200, y: 172, "text-anchor": "middle", class: "center-title" }, state.mode === "rasi" ? "Rasi" : "Navamsam"));
   root.append(svg("text", { x: 200, y: 192, "text-anchor": "middle", class: "center-sub" }, name || "this moment"));
-  root.append(svg("text", { x: 200, y: 208, "text-anchor": "middle", class: "center-sub" }, formatZoned(c.ms, state.place.tz)));
-  root.append(svg("text", { x: 200, y: 224, "text-anchor": "middle", class: "center-sub" }, state.place.name));
+  root.append(svg("text", { x: 200, y: 208, "text-anchor": "middle", class: "center-sub" }, c.fixed ? "traditional chart" : formatZoned(c.ms, state.place.tz)));
+  root.append(svg("text", { x: 200, y: 224, "text-anchor": "middle", class: "center-sub" }, c.fixed ? "placements, no birth time" : state.place.name));
   root.append(svg("text", { x: 200, y: 244, "text-anchor": "middle", class: "center-sub", style: "fill: var(--gold)" },
     `Lagna ${SIGNS[c.lagna.sign].en} · Moon ${SIGNS[c.planets.moon.sign].en} · ${c.star.name}`));
 
@@ -383,6 +420,7 @@ function renderReading() {
 }
 
 function chartKey() {
+  if (state.fixed) return `example|${state.fixed.id}`;
   return `${state.chart.ms}|${state.place.name}|${$("f-name").value.trim()}`;
 }
 
@@ -601,20 +639,20 @@ function miniWheel(g) {
 function renderDasha() {
   const d = state.dasha;
   const birth = state.chart.ms;
+  const age = (ms) => Math.max(0, (ms - birth) / YEAR_MS);
   const total = d.periods.at(-1).end - d.periods[0].start;
   const now = Date.now();
   const bar = el("div", { class: "dasha-bar" }, d.periods.map((p, i) => el("button", {
     type: "button", style: `flex:${(p.end - p.start) / total};background:${GRAHAS[p.lord].color}`, "aria-pressed": String(state.dashaOpen === i),
-    title: `${GRAHAS[p.lord].en} dasa: ${year(p.start)}–${year(p.end)}`, onclick: () => { state.dashaOpen = state.dashaOpen === i ? null : i; renderDasha(); },
+    title: state.fixed ? `${GRAHAS[p.lord].en} dasa: age ${age(p.start).toFixed(0)}–${age(p.end).toFixed(0)}` : `${GRAHAS[p.lord].en} dasa: ${year(p.start)}–${year(p.end)}`, onclick: () => { state.dashaOpen = state.dashaOpen === i ? null : i; renderDasha(); },
   }, GRAHAS[p.lord].abbr)));
   if (now > d.periods[0].start && now < d.periods.at(-1).end) bar.append(el("span", { class: "now", style: `left:${((now - d.periods[0].start) / total) * 100}%` }));
-  const age = (ms) => Math.max(0, (ms - birth) / YEAR_MS);
   const list = el("div", { class: "periods" }, d.periods.map((p, i) => {
     const current = p.start <= now && now < p.end;
     const row = el("button", { type: "button", class: `period${current ? " current" : ""}`, onclick: () => { state.dashaOpen = state.dashaOpen === i ? null : i; renderDasha(); } },
       el("span", { class: "sw", style: `background:${GRAHAS[p.lord].color}` }),
       el("span", {}, el("b", { text: `${GRAHAS[p.lord].ta} dasa` }), ` · ${GRAHAS[p.lord].en}, ${GRAHAS[p.lord].years} yrs`, el("br"),
-        el("small", { text: `${fmtDate(Math.max(p.start, birth))} → ${fmtDate(p.end)} · age ${age(Math.max(p.start, birth)).toFixed(1)}–${age(p.end).toFixed(1)}` })),
+        el("small", { text: state.fixed ? `age ${age(Math.max(p.start, birth)).toFixed(1)}–${age(p.end).toFixed(1)}` : `${fmtDate(Math.max(p.start, birth))} → ${fmtDate(p.end)} · age ${age(Math.max(p.start, birth)).toFixed(1)}–${age(p.end).toFixed(1)}` })),
       el("span", { class: "note", text: current ? "now" : state.dashaOpen === i ? "▲" : "▼" }));
     const wrap = el("div", {}, row);
     if (state.dashaOpen === i) wrap.append(dashaDetail(p));
@@ -638,7 +676,7 @@ function dashaDetail(p) {
       el("td", { class: "note", text: `${((s.end - s.start) / YEAR_MS * 12).toFixed(1)} months` }))))));
 }
 const year = (ms) => new Date(ms).getUTCFullYear();
-const fmtDate = (ms) => formatZoned(ms, state.place.tz, { dateStyle: "medium" });
+const fmtDate = (ms) => state.fixed ? `age ${Math.max(0, (ms - state.chart.ms) / YEAR_MS).toFixed(1)}` : formatZoned(ms, state.place.tz, { dateStyle: "medium" });
 
 function renderYogas() {
   const c = state.chart;
@@ -747,7 +785,7 @@ function renderCheat() {
 }
 
 // ---------- reverse search ----------
-const EXAMPLES = [
+const QUESTION_EXAMPLES = [
   "A calm, wise teacher with a gift for music",
   "A bold leader who becomes famous, with a strong career",
   "A disciplined, hardworking engineer who travels abroad",
@@ -758,7 +796,7 @@ const EXAMPLES = [
 function renderFind() {
   $("q-place").textContent = `${state.place.name} (${state.place.tz})`;
   if (!$("q-examples").childElementCount) {
-    $("q-examples").append(...EXAMPLES.map((x) => el("button", { type: "button", text: x, onclick: () => { $("q-text").value = x; } })));
+    $("q-examples").append(...QUESTION_EXAMPLES.map((x) => el("button", { type: "button", text: x, onclick: () => { $("q-text").value = x; } })));
     const z = utcToZoned(Date.now(), state.place.tz);
     const iso = (y, m, d) => `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     $("q-from").value = iso(z.year, z.month, z.day);
@@ -836,6 +874,8 @@ function renderResults(results) {
 }
 
 function openMoment(ms) {
+  state.fixed = null;
+  state.example = null;
   const z = utcToZoned(ms, state.place.tz);
   $("f-date").value = `${z.year}-${String(z.month).padStart(2, "0")}-${String(z.day).padStart(2, "0")}`;
   $("f-time").value = `${String(z.hour).padStart(2, "0")}:${String(z.minute).padStart(2, "0")}`;
@@ -845,14 +885,172 @@ function openMoment(ms) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ---------- wiring ----------
-for (const id of ["f-date", "f-time", "f-name"]) $(id).addEventListener("input", () => recompute());
-placeSel.addEventListener("change", () => {
+// ---------- profiles ----------
+function formProfile() {
+  const place = placeSel.value === "__custom"
+    ? { name: state.place.name, lat: Number($("f-lat").value), lon: Number($("f-lon").value), tz: $("f-tz").value || deviceZone() }
+    : placeSel.value;
+  return { name: $("f-name").value.trim(), d: $("f-date").value, t: $("f-time").value, place };
+}
+
+function applyBirth(p) {
+  $("f-name").value = p.name;
+  $("f-date").value = p.d;
+  $("f-time").value = p.t;
+  if (typeof p.place === "string" && CITIES.some((c) => c.name === p.place)) {
+    placeSel.value = p.place;
+    customName = "";
+  } else {
+    const pl = typeof p.place === "object" ? p.place : state.place;
+    placeSel.value = "__custom";
+    $("f-lat").value = pl.lat;
+    $("f-lon").value = pl.lon;
+    setZone(pl.tz);
+    customName = pl.name || "";
+  }
   $("custom-place").hidden = placeSel.value !== "__custom";
+  state.place = readPlace();
+}
+
+function resetView() {
+  state.scrub = 0;
+  $("f-scrub").value = 0;
+  state.tour = 0;
+  state.selected = null;
+  state.group = null;
+  state.dashaOpen = null;
+}
+
+function openProfile(p) {
+  state.fixed = null;
+  state.example = null;
+  state.profileId = p.id;
+  applyBirth(p);
+  resetView();
+  recompute({ keepSelection: false });
+}
+
+function openExample(ex) {
+  state.profileId = null;
+  state.example = ex;
+  resetView();
+  if (ex.kind === "traditional") {
+    state.fixed = ex;
+    $("f-name").value = ex.name;
+  } else {
+    state.fixed = null;
+    applyBirth(ex);
+  }
+  recompute({ keepSelection: false });
+}
+
+function leaveFixed() {
+  state.fixed = null;
+  state.example = null;
+  $("f-name").value = "";
+  setNow();
+  resetView();
+  recompute({ keepSelection: false });
+}
+
+async function refreshProfiles() {
+  try {
+    state.profiles = await loadProfiles();
+    state.profilesError = null;
+  } catch (err) {
+    state.profilesError = "Profiles are saved on the home server, which isn't reachable right now.";
+  }
+  renderProfiles();
+}
+
+async function saveProfile(asNew) {
+  const p = formProfile();
+  if (!p.name) {
+    const name = prompt("Whose chart is this?", "");
+    if (!name || !name.trim()) return;
+    $("f-name").value = name.trim().slice(0, 40);
+    p.name = $("f-name").value;
+  }
+  const creating = asNew || !state.profileId;
+  const id = creating ? newId() : state.profileId;
+  try {
+    state.profiles = await changeProfiles((list) => upsert(list, { ...p, id }));
+    state.profileId = id;
+    state.example = null;
+    toast(creating ? `Saved ${p.name}` : `Updated ${p.name}`);
+  } catch (err) {
+    toast(err.message);
+  }
+  history.replaceState(null, "", shareURL());
+  renderProfiles();
+}
+
+async function deleteProfile() {
+  const p = state.profiles.find((x) => x.id === state.profileId);
+  if (!p || !confirm(`Delete ${p.name}'s profile? This can't be undone.`)) return;
+  try {
+    state.profiles = await changeProfiles((list) => removeProfile(list, p.id));
+    state.profileId = null;
+    toast(`Deleted ${p.name}`);
+  } catch (err) {
+    toast(err.message);
+  }
+  history.replaceState(null, "", shareURL());
+  renderProfiles();
+}
+
+function renderProfiles() {
+  const active = state.profiles.find((p) => p.id === state.profileId) || null;
+  const dirty = active && !state.fixed && !sameBirth(active, { ...formProfile(), name: $("f-name").value.trim() });
+  const chip = (label, sub, pressed, onclick, extra = "") => el("button", {
+    type: "button", class: `pchip${extra}`, "aria-pressed": String(pressed), onclick,
+  }, el("b", { text: label }), sub ? el("small", { text: sub }) : null);
+
+  const mine = state.profiles.length
+    ? state.profiles.map((p) => chip(p.name, p.d.slice(0, 4), p.id === state.profileId, () => openProfile(p)))
+    : [el("span", { class: "note", text: state.profilesError || "No saved profiles yet. Enter someone's birth details below and press Save." })];
+  put($("profiles-mine"), mine);
+  $("profiles-count").textContent = state.profiles.length >= MAX_PROFILES ? `${MAX_PROFILES} of ${MAX_PROFILES}, full: delete one to add another` : `${state.profiles.length} of ${MAX_PROFILES}`;
+
+  put($("profiles-examples"), PEOPLE.map((ex) => chip(ex.name, ex.kind === "traditional" ? "traditional" : ex.d.slice(0, 4),
+    state.example?.id === ex.id, () => openExample(ex), ex.kind === "traditional" ? " trad" : "")));
+
+  const actions = [];
+  if (state.fixed) {
+    actions.push(el("button", { type: "button", class: "ghost small", onclick: leaveFixed }, "Back to a birth time"));
+  } else {
+    if (active && dirty) actions.push(el("button", { type: "button", class: "primary small", onclick: () => saveProfile(false) }, `Save changes to ${active.name}`));
+    if (!active || dirty) actions.push(el("button", { type: "button", class: active ? "ghost small" : "primary small", disabled: state.profiles.length >= MAX_PROFILES || state.profilesError ? "" : null, title: state.profiles.length >= MAX_PROFILES ? `You can keep up to ${MAX_PROFILES} profiles. Delete one first.` : null, onclick: () => saveProfile(true) }, active ? "Save as new profile" : "Save as profile"));
+    if (active) actions.push(el("button", { type: "button", class: "ghost small danger", onclick: deleteProfile }, "Delete"));
+  }
+  put($("profiles-actions"), actions);
+
+  const ex = state.example;
+  $("profile-source").hidden = !ex;
+  if (ex) put($("profile-source"), el("b", { text: `${ex.name}: ` }), ex.source);
+  $("birth-fields").hidden = !!state.fixed;
+  $("fixed-note").hidden = !state.fixed;
+}
+$("profiles-toggle").addEventListener("click", () => {
+  const open = $("profiles").classList.toggle("open");
+  $("profiles-toggle").setAttribute("aria-expanded", String(open));
+});
+
+// ---------- wiring ----------
+for (const id of ["f-date", "f-time", "f-name"]) $(id).addEventListener("input", () => { state.example = null; recompute(); });
+placeSel.addEventListener("change", () => {
+  state.example = null;
+  customName = "";
+  $("custom-place").hidden = placeSel.value !== "__custom";
+  if (placeSel.value === "__custom") {
+    $("f-lat").value = state.place.lat;
+    $("f-lon").value = state.place.lon;
+    setZone(state.place.tz);
+  }
   state.place = readPlace();
   recompute();
 });
-for (const id of ["f-lat", "f-lon", "f-tz"]) $(id).addEventListener("change", () => { state.place = readPlace(); recompute(); });
+for (const id of ["f-lat", "f-lon", "f-tz"]) $(id).addEventListener("change", () => { state.example = null; customName = ""; state.place = readPlace(); recompute(); });
 $("b-now").addEventListener("click", () => { setNow(); state.scrub = 0; $("f-scrub").value = 0; recompute(); });
 $("b-share").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(shareURL().href); toast("Link copied"); } catch { toast("Copy the address bar"); }
@@ -879,7 +1077,14 @@ $("t-lines").addEventListener("change", (e) => { state.lines = e.target.checked;
 $("t-trines").addEventListener("change", (e) => { state.trines = e.target.checked; recompute(); });
 
 fromURL();
-recompute();
+const q0 = new URLSearchParams(location.search);
+const ex0 = exampleById(q0.get("ex"));
+if (ex0) openExample(ex0);
+else recompute();
+refreshProfiles().then(() => {
+  const p = state.profiles.find((x) => x.id === q0.get("pr"));
+  if (p) openProfile(p);
+});
 const hash = new URLSearchParams(location.hash.slice(1));
 if (hash.get("sel") && GRAHAS[hash.get("sel")]) select({ kind: "planet", id: hash.get("sel") });
 else if (Number(hash.get("house")) >= 1 && Number(hash.get("house")) <= 12) select({ kind: "house", id: Number(hash.get("house")) });
