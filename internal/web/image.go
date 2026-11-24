@@ -29,7 +29,7 @@ import (
 // password; looking at them doesn't. Jobs run on the server, so a picture
 // finishes even if the page that asked for it is closed.
 const (
-	imageWorkers     = 3
+	imageWorkers     = 2
 	imagePerDay      = 400
 	imageBatch       = 40
 	imageMaxPrompt   = 8 << 10
@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	imageBackoff = []time.Duration{20 * time.Second, 40 * time.Second, 60 * time.Second, 90 * time.Second}
+	imageBackoff = []time.Duration{15 * time.Second, 30 * time.Second, 60 * time.Second, 90 * time.Second, 2 * time.Minute, 2 * time.Minute, 3 * time.Minute}
 	imageKeyRE   = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,79}$`)
 	imageAspect = map[string]bool{"1:1": true, "2:3": true, "3:2": true, "3:4": true, "4:3": true, "9:16": true, "16:9": true, "21:9": true}
 )

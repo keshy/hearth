@@ -40,6 +40,9 @@ const (
 	// CapImage lets an app have pictures painted by the house's image model
 	// (/_api/image). Painting needs the admin password.
 	CapImage = "image"
+	// CapRooms lets an app host shared game rooms that people on the network
+	// join from their own devices (/_api/rooms).
+	CapRooms = "rooms"
 )
 
 type App struct {
@@ -227,7 +230,7 @@ func (a *App) Clean() error {
 		return errors.New("generated apps can't request capabilities")
 	}
 	for _, c := range a.Capabilities {
-		if c != CapBuilder && c != CapLLM && c != CapConnect && c != CapImage {
+		if c != CapBuilder && c != CapLLM && c != CapConnect && c != CapImage && c != CapRooms {
 			return fmt.Errorf("unknown capability %q", c)
 		}
 	}

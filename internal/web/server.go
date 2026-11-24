@@ -48,6 +48,7 @@ type Server struct {
 	fbOnce   sync.Once
 	connect  *connect.Hub
 	images   imageQueue
+	rooms    roomStore
 }
 
 func New(ctx context.Context, cfg config.Config, engine *deploy.Engine, health *Health, b *builder.Builder, reload func() error, logger *log.Logger) (*Server, error) {
@@ -107,6 +108,13 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /_api/image/jobs", s.imagePaint)
 	api.HandleFunc("GET /_api/image/files/{key}", s.imageFile)
 	api.HandleFunc("DELETE /_api/image/files/{key}", s.imageDelete)
+	api.HandleFunc("GET /_api/rooms", s.roomList)
+	api.HandleFunc("POST /_api/rooms", s.roomCreate)
+	api.HandleFunc("GET /_api/rooms/{id}", s.roomGet)
+	api.HandleFunc("PUT /_api/rooms/{id}", s.roomPut)
+	api.HandleFunc("DELETE /_api/rooms/{id}", s.roomDelete)
+	api.HandleFunc("POST /_api/rooms/{id}/players", s.roomJoin)
+	api.HandleFunc("DELETE /_api/rooms/{id}/players/{player}", s.roomLeave)
 	api.HandleFunc("GET /_api/connect/devices", s.connectDevices)
 	api.HandleFunc("GET /_api/connect/devices/{id}", s.connectStatus)
 	api.HandleFunc("POST /_api/connect/devices/{id}/{action}", s.connectAction)
