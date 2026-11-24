@@ -39,7 +39,8 @@ const (
 )
 
 var (
-	imageKeyRE  = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,79}$`)
+	imageBackoff = []time.Duration{20 * time.Second, 40 * time.Second, 60 * time.Second, 90 * time.Second}
+	imageKeyRE   = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,79}$`)
 	imageAspect = map[string]bool{"1:1": true, "2:3": true, "3:2": true, "3:4": true, "4:3": true, "9:16": true, "16:9": true, "21:9": true}
 )
 
@@ -274,15 +275,36 @@ func (s *Server) paint(app string, j imageJob, st *imageState) {
 		img builder.Image
 		err error
 	)
-	// Image models fail now and then (busy, or a picture blocked by a filter
-	// that a second try gets past).
-	for try := 0; try < 2; try++ {
+	// Image models fail now and then (a picture blocked by a filter that a
+	// second try gets past). Rate limits are per minute, so those wait and
+	// retry; a high-quality picture that stays limited drops to the regular
+	// model rather than failing.
+	high, failures, limited := j.High, 0, 0
+	for failures < 2 {
 		ctx, cancel := context.WithTimeout(s.ctx, imageTimeout)
-		img, err = s.builder.Paint(ctx, j.High, j.Prompt, refs, aspect)
+		img, err = s.builder.Paint(ctx, high, j.Prompt, refs, aspect)
 		cancel()
 		if err == nil {
 			break
 		}
+		if !rateLimited(err) {
+			failures++
+			continue
+		}
+		if limited == len(imageBackoff) {
+			if !high {
+				break
+			}
+			high, limited = false, 0
+			continue
+		}
+		select {
+		case <-time.After(imageBackoff[limited]):
+		case <-s.ctx.Done():
+			set("error", "the server is shutting down")
+			return
+		}
+		limited++
 	}
 	if err != nil {
 		s.log.Printf("image %s/%s: %v", app, j.Key, err)
@@ -304,6 +326,11 @@ func (s *Server) paint(app string, j imageJob, st *imageState) {
 		return
 	}
 	set("done", "")
+}
+
+func rateLimited(err error) bool {
+	m := err.Error()
+	return strings.Contains(m, "429") || strings.Contains(m, "RESOURCE_EXHAUSTED")
 }
 
 func toJPEG(b []byte) ([]byte, error) {

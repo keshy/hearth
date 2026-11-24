@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"image"
 	"image/color"
 	"image/png"
@@ -29,10 +30,14 @@ type fakePainter struct {
 	fakeModel
 	prompts []string
 	refs    []int
+	limited map[string]bool // models that answer 429
 }
 
 func (f *fakePainter) Paint(_ context.Context, model, prompt string, refs []builder.Image, aspect string) (builder.Image, error) {
 	f.prompts = append(f.prompts, model+"|"+aspect+"|"+prompt)
+	if f.limited[model] {
+		return builder.Image{}, errors.New("Error 429, Message: Resource exhausted. Status: RESOURCE_EXHAUSTED")
+	}
 	f.refs = append(f.refs, len(refs))
 	img := image.NewRGBA(image.Rect(0, 0, 16, 9))
 	img.Set(1, 1, color.RGBA{200, 100, 0, 255})
@@ -139,6 +144,31 @@ func TestImagePaintFlow(t *testing.T) {
 	}
 	if w := imageReq(s, "DELETE", "story", "/_api/image/files/kalki-c1-p01", "", "secret-pw"); w.Code != http.StatusNoContent {
 		t.Fatalf("delete: %d", w.Code)
+	}
+}
+
+func TestImageRateLimitFallsBack(t *testing.T) {
+	old := imageBackoff
+	imageBackoff = []time.Duration{time.Millisecond, time.Millisecond}
+	t.Cleanup(func() { imageBackoff = old })
+	s, p := imageServer(t)
+	p.limited = map[string]bool{"gemini-3-pro-image": true}
+	job := `{"jobs":[{"key":"sheet","prompt":"a hero","high":true}]}`
+	if w := imageReq(s, "POST", "story", "/_api/image/jobs", job, "secret-pw"); w.Code != http.StatusAccepted {
+		t.Fatalf("paint: %d %s", w.Code, w.Body)
+	}
+	if st := waitImage(t, s, "sheet"); st.State != "done" {
+		t.Fatalf("state %+v", st)
+	}
+	// Three tries on the limited model (two waits), then the regular one.
+	if len(p.prompts) != 4 || !strings.HasPrefix(p.prompts[3], "gemini-3.1-flash-image|") {
+		t.Fatalf("calls %q", p.prompts)
+	}
+
+	p.limited["gemini-3.1-flash-image"] = true
+	imageReq(s, "POST", "story", "/_api/image/jobs", `{"jobs":[{"key":"panel","prompt":"x"}]}`, "secret-pw")
+	if st := waitImage(t, s, "panel"); st.State != "error" || !strings.Contains(st.Error, "429") {
+		t.Fatalf("state %+v", st)
 	}
 }
 
