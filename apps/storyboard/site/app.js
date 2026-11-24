@@ -151,6 +151,7 @@ async function route() {
   try {
     if (p[0] === "new") return newStory();
     if (p[0] === "s" && p[1] && !p[2]) return await storyHome(p[1]);
+    if (p[0] === "s" && p[1] && p[2] === "book") return await book(p[1]);
     if (p[0] === "s" && p[1] && p[2]) return await reader(p[1], Number(p[2]), q);
     return await shelf();
   } catch (e) {
@@ -264,7 +265,11 @@ async function storyHome(sid) {
         story.by ? el("p", { class: "by", text: `by ${story.by}` }) : null,
         story.tagline ? el("p", { class: "tagline", text: story.tagline }) : null,
         el("p", { text: story.logline }),
-        firstRead ? el("a", { class: "btn primary big", href: `#/s/${sid}/${firstRead.n}`, text: "📖 Start reading" }) : el("p", { class: "muted", text: "No parts are written yet." }))),
+        firstRead
+          ? el("div", { class: "row-btns" },
+            el("a", { class: "btn primary big", href: `#/s/${sid}/${firstRead.n}`, text: "📖 Start reading" }),
+            el("a", { class: "btn ghost", href: `#/s/${sid}/book`, text: "📕 Whole book (print / PDF)" }))
+          : el("p", { class: "muted", text: "No parts are written yet." }))),
     tools,
     el("h2", { class: "section-title", text: "The cast" }),
     el("div", { class: "cast" }, ...story.cast.map(castCard)),
@@ -494,6 +499,52 @@ function comicView(story, ch, part, page, link, names) {
     if (Math.abs(dx) > 60) go(dx < 0 ? 1 : -1);
   });
   return wrap;
+}
+
+// book lays every written part out page after page, ready to print or save
+// as a PDF to share.
+async function book(sid) {
+  const story = await getStory(sid);
+  const written = story.parts.filter((p) => p.status === "written");
+  const chs = (await Promise.all(written.map((p) => getChapter(sid, p.n, true)))).filter(Boolean);
+  if (!chs.length) throw new Error("No parts are written yet.");
+  document.title = story.title;
+  await refresh([S.coverImage(sid), ...chs.flatMap((ch) => S.allPanels(ch).map((p) => S.panelImage(sid, ch.n, p.id)))]);
+  const names = Object.fromEntries(story.cast.map((c) => [c.id, c.name]));
+  const total = chs.reduce((n, ch) => n + S.allPanels(ch).length, 0);
+  const painted = chs.reduce((n, ch) => n + S.allPanels(ch).filter((p) => images[S.panelImage(sid, ch.n, p.id)]?.state === "done").length, 0);
+
+  const sheets = [el("section", { class: "book-cover" },
+    slot(S.coverImage(sid), `${story.title} cover`, "cover"),
+    el("h1", { class: "comic-title", text: story.title }),
+    story.by ? el("p", { class: "by", text: `by ${story.by}` }) : null,
+    story.tagline ? el("p", { class: "tagline", text: story.tagline }) : null)];
+  let pageNo = 0;
+  for (const ch of chs) {
+    ch.pages.forEach((pg, i) => {
+      const sheet = el("article", { class: "cpage" });
+      if (i === 0) sheet.append(el("header", { class: "chapter-banner" }, el("span", { text: `Part ${ch.n}` }), el("strong", { text: ch.title }), ch.logline ? el("em", { text: ch.logline }) : null));
+      for (const row of S.rows(pg.panels)) sheet.append(el("div", { class: `crow n${row.length}` }, ...row.map((p) => panelEl(story, ch, p, names, true))));
+      sheet.append(el("footer", { class: "page-no", text: String(++pageNo) }));
+      sheets.push(sheet);
+    });
+  }
+  const coming = story.parts.filter((p) => p.status !== "written");
+  if (coming.length) {
+    sheets.push(el("section", { class: "book-next card" },
+      el("h2", { class: "comic-title", text: "To be continued…" }),
+      el("ol", {}, ...coming.map((p) => el("li", { value: p.n }, el("strong", { text: p.title }))))));
+  }
+
+  show(
+    el("div", { class: "reader-head" },
+      el("a", { class: "crumb", href: `#/s/${sid}`, text: `◂ ${story.title}` }),
+      el("div", { class: "row-btns" },
+        el("button", { type: "button", class: "primary", text: "🖨 Print or save as PDF", onclick: () => window.print() }),
+        el("span", { class: "muted", text: `${chs.length} part${chs.length > 1 ? "s" : ""}, ${pageNo} pages${painted < total ? ` (${total - painted} panels still painting)` : ""}. In the print window, choose “Save as PDF” to get a file you can share.` }))),
+    el("div", { class: "comic volume" }, ...sheets));
+  for (const img of document.querySelectorAll(".volume img")) img.loading = "eager";
+  watch();
 }
 
 function zoomPanel(story, ch, p, names) {

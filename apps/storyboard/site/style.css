@@ -227,9 +227,27 @@ dialog.sheet .actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
   .bubble .who { display: none; }
 }
 
+.volume { gap: 2rem; }
+.book-cover { width: min(100%, 640px); display: grid; justify-items: center; gap: 0.6rem; text-align: center; padding: 1rem 0 2rem; }
+.book-cover .cover { width: min(100%, 460px); aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 4px var(--ink); }
+.book-cover .cover img { width: 100%; height: 100%; object-fit: cover; }
+.book-cover .comic-title { margin: 0.6rem 0 0; font-size: clamp(2rem, 6vw, 3.4rem); }
+.book-cover .by { margin: 0; font: 700 1.1rem var(--hand); }
+.book-next { width: min(100%, 640px); text-align: center; }
+.book-next ol { text-align: left; display: inline-block; }
+
 @media print {
   .bar, .tabs, .row-btns, .crumb, .pager, .reader-tools, .toast { display: none !important; }
   body { background: #fff; }
   .shots { font-size: 10px; }
   .shots tr { break-inside: avoid; }
+  @page { size: A4; margin: 8mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .volume { display: block; }
+  .volume > * { break-after: page; margin: 0 auto; }
+  .volume > :last-child { break-after: auto; }
+  .volume .cpage { width: 100%; border-radius: 0; box-shadow: none; }
+  .volume .crow { break-inside: avoid; }
+  .book-cover { min-height: 260mm; align-content: center; color: #111; }
+  .book-next { color: #111; background: #fff; }
 }
