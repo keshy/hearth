@@ -41,7 +41,7 @@ const (
 var (
 	imageBackoff = []time.Duration{15 * time.Second, 30 * time.Second, 60 * time.Second, 90 * time.Second, 2 * time.Minute, 2 * time.Minute, 3 * time.Minute}
 	imageKeyRE   = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,79}$`)
-	imageAspect = map[string]bool{"1:1": true, "2:3": true, "3:2": true, "3:4": true, "4:3": true, "9:16": true, "16:9": true, "21:9": true}
+	imageAspect  = map[string]bool{"1:1": true, "2:3": true, "3:2": true, "3:4": true, "4:3": true, "9:16": true, "16:9": true, "21:9": true}
 )
 
 type imageJob struct {
