@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Storyboard</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <script src="/_hearth/hearth.js"></script>
+  <link rel="stylesheet" href="/_hearth/theme.css">
+  <link rel="stylesheet" href="/_hearth/kit.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Courier+Prime:wght@400;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="back" id="back" href="/">All apps</a>
+    <h1><a href="#/" class="brand">Storyboard</a></h1>
+    <button type="button" class="ghost small studio-btn" id="studio" aria-pressed="false">✎ Studio</button>
+    <button class="theme-toggle" data-hearth-theme-toggle></button>
+  </header>
+
+  <main id="app" class="sb" aria-live="polite"></main>
+
+  <dialog id="unlock" class="sheet">
+    <form method="dialog" id="unlock-form">
+      <h2>Open the studio</h2>
+      <p>Writing and painting stories uses the house's Gemini, so it needs the admin password. This device will remember it.</p>
+      <label>Admin password <input type="password" id="unlock-pw" autocomplete="current-password" required></label>
+      <p class="err" id="unlock-err" role="alert"></p>
+      <div class="actions">
+        <button type="button" class="ghost" value="cancel" id="unlock-cancel">Cancel</button>
+        <button type="submit" class="primary">Open</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="zoom" class="zoom" aria-label="Panel">
+    <button type="button" class="close" id="zoom-close" aria-label="Close">✕</button>
+    <div id="zoom-body"></div>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -96,6 +96,10 @@ func (b *Builder) generator(ctx context.Context) (Generator, error) {
 
 // Complete runs one JSON prompt on the builder's model client.
 func (b *Builder) Complete(ctx context.Context, system, prompt string) (string, error) {
+	return b.CompleteWith(ctx, system, prompt, Options{})
+}
+
+func (b *Builder) CompleteWith(ctx context.Context, system, prompt string, opt Options) (string, error) {
 	g, err := b.generator(ctx)
 	if err != nil {
 		return "", err
@@ -104,7 +108,25 @@ func (b *Builder) Complete(ctx context.Context, system, prompt string) (string, 
 	if !ok {
 		return "", errors.New("the configured model client can't answer prompts")
 	}
-	return c.Complete(ctx, system, prompt)
+	return c.Complete(ctx, system, prompt, opt)
+}
+
+// Paint draws a picture with the configured image model; high picks the
+// better (dearer) one.
+func (b *Builder) Paint(ctx context.Context, high bool, prompt string, refs []Image, aspect string) (Image, error) {
+	g, err := b.generator(ctx)
+	if err != nil {
+		return Image{}, err
+	}
+	p, ok := g.(Painter)
+	if !ok {
+		return Image{}, errors.New("the configured model client can't draw")
+	}
+	model := b.cfg.ImageModel
+	if high {
+		model = b.cfg.ImageModelHigh
+	}
+	return p.Paint(ctx, model, prompt, refs, aspect)
 }
 
 func (b *Builder) Start(req Request) (Job, error) {

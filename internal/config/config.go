@@ -40,6 +40,10 @@ type Config struct {
 	GCPProject  string `json:"gcp_project,omitempty"`
 	GCPLocation string `json:"gcp_location"`
 	GeminiModel string `json:"gemini_model"`
+	// Image models for apps with the image capability: a cheaper one for most
+	// pictures and a better one for the few that set a look (covers, sheets).
+	ImageModel     string `json:"image_model"`
+	ImageModelHigh string `json:"image_model_high"`
 
 	AdminPasswordHash string `json:"admin_password_hash,omitempty"`
 
@@ -50,16 +54,18 @@ var domainRE = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-
 
 func Defaults(dataDir string) Config {
 	return Config{
-		Domain:      "apps.home",
-		HTTPPort:    80,
-		HTTPSPort:   443,
-		AppListen:   "127.0.0.1:7070",
-		CaddyAdmin:  "localhost:2019",
-		Branch:      "main",
-		PollSeconds: 60,
-		GCPLocation: "global",
-		GeminiModel: "gemini-4-argon",
-		DataDir:     dataDir,
+		Domain:         "apps.home",
+		HTTPPort:       80,
+		HTTPSPort:      443,
+		AppListen:      "127.0.0.1:7070",
+		CaddyAdmin:     "localhost:2019",
+		Branch:         "main",
+		PollSeconds:    60,
+		GCPLocation:    "global",
+		GeminiModel:    "gemini-4-argon",
+		ImageModel:     "gemini-3.1-flash-image",
+		ImageModelHigh: "gemini-3-pro-image",
+		DataDir:        dataDir,
 	}
 }
 
@@ -116,6 +122,12 @@ func Load(dataDir string) (Config, error) {
 	}
 	if c.GeminiModel == "" {
 		c.GeminiModel = d.GeminiModel
+	}
+	if c.ImageModel == "" {
+		c.ImageModel = d.ImageModel
+	}
+	if c.ImageModelHigh == "" {
+		c.ImageModelHigh = d.ImageModelHigh
 	}
 	return c, c.Validate()
 }

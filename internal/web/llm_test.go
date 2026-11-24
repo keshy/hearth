@@ -24,7 +24,7 @@ type fakeModel struct{ prompts []string }
 func (f *fakeModel) Generate(context.Context, string, []builder.Turn) (string, error) {
 	return "{}", nil
 }
-func (f *fakeModel) Complete(_ context.Context, system, prompt string) (string, error) {
+func (f *fakeModel) Complete(_ context.Context, system, prompt string, _ builder.Options) (string, error) {
 	f.prompts = append(f.prompts, prompt)
 	return `{"ok":true}`, nil
 }

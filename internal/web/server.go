@@ -47,6 +47,7 @@ type Server struct {
 	fb       *feedbackStore
 	fbOnce   sync.Once
 	connect  *connect.Hub
+	images   imageQueue
 }
 
 func New(ctx context.Context, cfg config.Config, engine *deploy.Engine, health *Health, b *builder.Builder, reload func() error, logger *log.Logger) (*Server, error) {
@@ -101,6 +102,11 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /_api/builder/apps/{name}/restore", s.builderRestore)
 	api.HandleFunc("DELETE /_api/builder/apps/{name}/errors", s.builderClearErrors)
 	api.HandleFunc("POST /_api/llm", s.llmAsk)
+	api.HandleFunc("GET /_api/editor", s.editorCheck)
+	api.HandleFunc("GET /_api/image/jobs", s.imageJobs)
+	api.HandleFunc("POST /_api/image/jobs", s.imagePaint)
+	api.HandleFunc("GET /_api/image/files/{key}", s.imageFile)
+	api.HandleFunc("DELETE /_api/image/files/{key}", s.imageDelete)
 	api.HandleFunc("GET /_api/connect/devices", s.connectDevices)
 	api.HandleFunc("GET /_api/connect/devices/{id}", s.connectStatus)
 	api.HandleFunc("POST /_api/connect/devices/{id}/{action}", s.connectAction)

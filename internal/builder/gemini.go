@@ -22,9 +22,26 @@ type Generator interface {
 	Generate(ctx context.Context, system string, turns []Turn) (string, error)
 }
 
+// Options tune one completion; zero values mean the defaults.
+type Options struct {
+	MaxTokens   int32
+	Temperature *float32
+}
+
 // Completer answers a single prompt with JSON text.
 type Completer interface {
-	Complete(ctx context.Context, system, prompt string) (string, error)
+	Complete(ctx context.Context, system, prompt string, opt Options) (string, error)
+}
+
+// Image is a picture passed to or returned by a model.
+type Image struct {
+	Data []byte
+	MIME string
+}
+
+// Painter draws one picture from a prompt, guided by reference images.
+type Painter interface {
+	Paint(ctx context.Context, model, prompt string, refs []Image, aspect string) (Image, error)
 }
 
 // ResolveProject finds the GCP project: config, then GOOGLE_CLOUD_PROJECT,
@@ -93,12 +110,18 @@ var outputSchema = &genai.Schema{
 }
 
 // Complete answers one prompt with JSON, for apps with the llm capability.
-func (g *gemini) Complete(ctx context.Context, system, prompt string) (string, error) {
+func (g *gemini) Complete(ctx context.Context, system, prompt string, opt Options) (string, error) {
+	if opt.MaxTokens <= 0 {
+		opt.MaxTokens = 8192
+	}
+	if opt.Temperature == nil {
+		opt.Temperature = genai.Ptr[float32](0.3)
+	}
 	resp, err := g.client.Models.GenerateContent(ctx, g.model, genai.Text(prompt), &genai.GenerateContentConfig{
 		SystemInstruction: genai.NewContentFromText(system, genai.RoleUser),
 		ResponseMIMEType:  "application/json",
-		Temperature:       genai.Ptr[float32](0.3),
-		MaxOutputTokens:   8192,
+		Temperature:       opt.Temperature,
+		MaxOutputTokens:   opt.MaxTokens,
 	})
 	if err != nil {
 		return "", err
@@ -133,4 +156,36 @@ func (g *gemini) Generate(ctx context.Context, system string, turns []Turn) (str
 		return "", errors.New("the model returned an empty response")
 	}
 	return text, nil
+}
+
+// Paint asks an image model for one picture. Reference images come first so
+// the prompt can point at them ("the attached character sheet").
+func (g *gemini) Paint(ctx context.Context, model, prompt string, refs []Image, aspect string) (Image, error) {
+	var parts []*genai.Part
+	for _, r := range refs {
+		parts = append(parts, genai.NewPartFromBytes(r.Data, r.MIME))
+	}
+	parts = append(parts, genai.NewPartFromText(prompt))
+	resp, err := g.client.Models.GenerateContent(ctx, model, []*genai.Content{genai.NewContentFromParts(parts, genai.RoleUser)}, &genai.GenerateContentConfig{
+		ResponseModalities: []string{"IMAGE"},
+		ImageConfig:        &genai.ImageConfig{AspectRatio: aspect},
+	})
+	if err != nil {
+		return Image{}, err
+	}
+	for _, c := range resp.Candidates {
+		if c.Content == nil {
+			continue
+		}
+		for _, p := range c.Content.Parts {
+			if p.InlineData != nil && len(p.InlineData.Data) > 0 {
+				return Image{Data: p.InlineData.Data, MIME: p.InlineData.MIMEType}, nil
+			}
+		}
+	}
+	reason := "no picture came back"
+	if len(resp.Candidates) > 0 && resp.Candidates[0].FinishReason != "" {
+		reason += " (" + string(resp.Candidates[0].FinishReason) + ")"
+	}
+	return Image{}, errors.New(reason)
 }

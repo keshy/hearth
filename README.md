@@ -137,11 +137,42 @@ const res = await fetch("/_api/llm", {
 const { text, model } = await res.json(); // text is the model's JSON reply
 ```
 
+Optional `maxTokens` (up to 32768, default 8192) and `temperature` (0 to 1.5,
+default 0.3) go in the same body.
+
 It uses the same Vertex AI setup as the App Builder (below). Limits: prompt
-4 KB, system prompt 24 KB, 20 calls per 10 minutes per app, 90 s timeout.
+32 KB, system prompt 24 KB, 20 calls per 10 minutes per app, 180 s timeout.
 Calls from other apps or other sites get 403, and generated apps can't ask
 for the capability. Apps should treat a failure (403/429/502/503) as "no
 model today" and fall back; `apps/astroscience` does.
+
+### Painting pictures from a static app
+
+An app with `capabilities: [image]` can have pictures painted by Gemini's
+image models on Vertex AI (the same setup as the builder). Painting costs
+money, so starting it needs the admin password, sent as basic auth (user
+`admin`); anyone can look at the results. Jobs run on the server, so a picture
+finishes even if the page that asked for it closes.
+
+```js
+const auth = { Authorization: "Basic " + btoa("admin:" + password) };
+await fetch("/_api/editor", { headers: auth });             // 200 if the password is right
+await fetch("/_api/image/jobs", {                           // up to 40 at a time
+  method: "POST", headers: { "Content-Type": "application/json", ...auth },
+  body: JSON.stringify({ jobs: [{ key: "hero-sheet", prompt: "...", aspect: "16:9", high: true },
+                                { key: "scene-1", prompt: "...", refs: ["hero-sheet"] }] }),
+});
+await fetch("/_api/image/jobs?keys=hero-sheet,scene-1");    // {images: {key: {state, version, error}}}
+// <img src="/_api/image/files/scene-1.jpg?v=VERSION">      // DELETE the same URL (with auth) to remove
+```
+
+`refs` are earlier pictures passed to the model as references (up to 6), which
+keeps characters looking the same from picture to picture. `high` uses
+`image_model_high` (default `gemini-3-pro-image`, about 13 cents a picture)
+instead of `image_model` (default `gemini-3.1-flash-image`, about 4 cents);
+both are settings in `config.json`. Pictures are stored as JPEG in
+`<data>/appdata/<app>/images/`. Limits: three painted at a time, 400 per app
+per day, 8 KB prompts.
 
 ### Playing music on speakers and TVs (Hearth Connect)
 
@@ -179,6 +210,7 @@ playing videos outside its own players.
 | `groceries` | Shared shopping list; the hand-written example of `/_api/data`. |
 | `naal` | Today in a Tamil home: panchangam computed in the browser, festivals, weekday prayers and music, played in the page or on a speaker or TV at home (Hearth Connect). |
 | `astroscience` | Learn Tamil astrology with a live chart. Opens on a step-by-step reading (each takeaway with its evidence and a link to the rule behind it), life areas ranked by support, the current dasha period, and an optional Gemini retelling; then the mechanics (grahas, houses, aspects, yogas), a cheat sheet and a reverse search ("find a moment"). Up to 20 saved birth profiles live in the app's data on the server (`<data>/appdata/astroscience/profiles.json`), never in this repository; famous example charts (Rama, Krishna, Modi, Vivekananda) ship with the app. |
+| `storyboard` | Graphic novels from a gist: Gemini writes the story bible, each chapter as comic pages, and a screenplay; the image model paints character sheets, a cover and every panel, with the sheets as references so characters stay consistent. Read it as a comic, a screenplay or a production shot list. Writing and painting happen in the Studio, which needs the admin password. Stories live in the app's data on the server, not in this repository. |
 | `builder` | The App Builder: build, change, preview, troubleshoot and roll back apps. |
 | `router` | A link to the router's admin page. |
 

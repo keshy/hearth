@@ -37,6 +37,9 @@ const (
 	// CapConnect lets an app find speakers and TVs on the network and play
 	// songs on them (/_api/connect).
 	CapConnect = "connect"
+	// CapImage lets an app have pictures painted by the house's image model
+	// (/_api/image). Painting needs the admin password.
+	CapImage = "image"
 )
 
 type App struct {
@@ -224,7 +227,7 @@ func (a *App) Clean() error {
 		return errors.New("generated apps can't request capabilities")
 	}
 	for _, c := range a.Capabilities {
-		if c != CapBuilder && c != CapLLM && c != CapConnect {
+		if c != CapBuilder && c != CapLLM && c != CapConnect && c != CapImage {
 			return fmt.Errorf("unknown capability %q", c)
 		}
 	}

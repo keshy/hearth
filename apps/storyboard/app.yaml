@@ -1,0 +1,9 @@
+title: Storyboard
+description: Give a story's gist and get a painted graphic novel, a screenplay and a production shot list.
+kind: static
+icon: /icon.svg
+tags: [family, stories]
+# Only site/ is published; test/ holds checks for the story helpers.
+output: site
+# Gemini writes the chapters; the image model paints the panels (admin only).
+capabilities: [llm, image]
