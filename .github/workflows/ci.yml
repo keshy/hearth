@@ -42,3 +42,7 @@ jobs:
         run: |
           node apps/astroscience/test/planets.test.mjs
           node apps/astroscience/test/chart.test.mjs
+      - name: Storyboard helpers and game rules
+        run: |
+          node --test apps/storyboard/test/*.test.mjs
+          node --test apps/games/test/*.test.mjs

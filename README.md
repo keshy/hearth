@@ -171,8 +171,36 @@ keeps characters looking the same from picture to picture. `high` uses
 `image_model_high` (default `gemini-3-pro-image`, about 13 cents a picture)
 instead of `image_model` (default `gemini-3.1-flash-image`, about 4 cents);
 both are settings in `config.json`. Pictures are stored as JPEG in
-`<data>/appdata/<app>/images/`. Limits: three painted at a time, 400 per app
-per day, 8 KB prompts.
+`<data>/appdata/<app>/images/`. Limits: two painted at a time, 400 per app
+per day, 8 KB prompts. When Vertex says the model is busy (429), a picture
+waits and tries again for up to about ten minutes; a `high` picture that stays
+limited is painted with the regular model instead.
+
+### Game rooms for playing together
+
+An app with `capabilities: [rooms]` can host shared rooms that anyone on the
+home network joins from their own device. The server keeps each room's state
+and orders the moves; the game rules live in the app. Every browser keeps a
+random player token (sent as `X-Player`), so a reload or a dropped Wi-Fi
+connection puts you back in your seat.
+
+```js
+const H = { "X-Player": token, "Content-Type": "application/json" };
+const room = await (await fetch("/_api/rooms", { method: "POST", headers: H,
+  body: JSON.stringify({ game: "chess", name: "🦁 Adi", max: 2 }) })).json();  // {id: "KMPX", me: "p1", ...}
+await fetch(`/_api/rooms/${id}/players`, { method: "POST", headers: H, body: '{"name":"🐼 Daddy"}' });
+await fetch(`/_api/rooms/${id}?since=${version}`, { headers: H });  // waits up to 25 s for a change
+await fetch(`/_api/rooms/${id}`, { method: "PUT", headers: H,      // 409 + the room if someone moved first
+  body: JSON.stringify({ version, state, status: "playing", private: { p1: secret } }) });
+// GET /_api/rooms lists rooms; DELETE /_api/rooms/{id}/players/{pid} leaves; DELETE /_api/rooms/{id} closes
+```
+
+`private` values (a hidden fleet, a spymaster's key) go only to the player
+they belong to; the host also gets its computer players' values, because the
+host's device plays for them. The host adds computer players with
+`{"name": "🤖 Robo", "bot": true}`. Rooms are saved under
+`<data>/appdata/<app>/rooms/` and close after three idle days. Limits: 40 rooms
+per app, 8 players, 128 KB of state.
 
 ### Playing music on speakers and TVs (Hearth Connect)
 
@@ -211,6 +239,7 @@ playing videos outside its own players.
 | `naal` | Today in a Tamil home: panchangam computed in the browser, festivals, weekday prayers and music, played in the page or on a speaker or TV at home (Hearth Connect). |
 | `astroscience` | Learn Tamil astrology with a live chart. Opens on a step-by-step reading (each takeaway with its evidence and a link to the rule behind it), life areas ranked by support, the current dasha period, and an optional Gemini retelling; then the mechanics (grahas, houses, aspects, yogas), a cheat sheet and a reverse search ("find a moment"). Up to 20 saved birth profiles live in the app's data on the server (`<data>/appdata/astroscience/profiles.json`), never in this repository; famous example charts (Rama, Krishna, Modi, Vivekananda) ship with the app. |
 | `storyboard` | Graphic novels from a gist: Gemini writes the story bible, each chapter as comic pages, and a screenplay; the image model paints character sheets, a cover and every panel, with the sheets as references so characters stay consistent. Read it as a comic, a screenplay or a production shot list. Writing and painting happen in the Studio, which needs the admin password. Stories live in the app's data on the server, not in this repository. |
+| `games` | Game Room: Chess, Codenames, Battleship, Tic-Tac-Toe, Snakes & Ladders and Ludo, played together from everyone's own phone or tablet. Start a game, others see it in the lobby (or type its four-letter code) and join; the host can fill empty seats with computer players. Battleship fleets and the Codenames key stay on their owners' devices, which answer shots and guesses on their own. |
 | `builder` | The App Builder: build, change, preview, troubleshoot and roll back apps. |
 | `router` | A link to the router's admin page. |
 

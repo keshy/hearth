@@ -1,0 +1,9 @@
+title: Game Room
+description: Chess, Codenames, Battleship, Tic-Tac-Toe, Snakes & Ladders and Ludo, played together from any device in the house.
+kind: static
+icon: /icon.svg
+tags: [family, games]
+# Only site/ is published; test/ holds checks for the game rules.
+output: site
+# Shared rooms: everyone's moves reach everyone's screens at once.
+capabilities: [rooms]
