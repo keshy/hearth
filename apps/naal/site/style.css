@@ -339,6 +339,10 @@ body:has(.np-dock:not([hidden])) { padding-bottom: 5rem; }
 .player { margin-top: 0.7rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
 .player-video { width: 100%; aspect-ratio: 16 / 9; min-height: 200px; border-radius: 16px; overflow: hidden; background: #000; }
 .player-video iframe { width: 100%; height: 100%; border: 0; display: block; }
+.player-video { position: relative; }
+.player-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.player-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgb(255 255 255 / 0.25); }
+.player-progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.25s linear; }
 .player-bar { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
 .player .np { display: grid; min-width: 0; }
 .player .np strong, .player .np span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

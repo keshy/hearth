@@ -115,6 +115,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("DELETE /_api/rooms/{id}", s.roomDelete)
 	api.HandleFunc("POST /_api/rooms/{id}/players", s.roomJoin)
 	api.HandleFunc("DELETE /_api/rooms/{id}/players/{player}", s.roomLeave)
+	api.HandleFunc("GET /_api/connect/audio/{video}", s.connectAudio)
 	api.HandleFunc("GET /_api/connect/devices", s.connectDevices)
 	api.HandleFunc("GET /_api/connect/devices/{id}", s.connectStatus)
 	api.HandleFunc("POST /_api/connect/devices/{id}/{action}", s.connectAction)

@@ -234,6 +234,13 @@ func (t *Tools) Resolve(ctx context.Context, id string) (string, string, error) 
 	return u, ct, nil
 }
 
+// Remember caches an audio URL for a video, as if Resolve had found it.
+func (t *Tools) Remember(id, u, contentType string, expires time.Time) {
+	t.cmu.Lock()
+	t.cache[id] = resolved{url: u, contentType: contentType, expires: expires}
+	t.cmu.Unlock()
+}
+
 // Forget drops a cached URL, after a device couldn't play it.
 func (t *Tools) Forget(id string) {
 	t.cmu.Lock()

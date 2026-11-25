@@ -221,7 +221,14 @@ await fetch(`/_api/connect/devices/${id}/play`, {      // replaces the device's 
 });
 await fetch(`/_api/connect/devices/${id}`);            // {state, song, index, queue, position, duration, volume, error}
 // POST .../{id}/pause | resume | next | prev | stop, and .../{id}/volume with {level: 0..1}
+// <audio src="/_api/connect/audio/AzTnnAfiqMg">         // the song's audio, relayed for the page itself
 ```
+
+The audio relay is for playing on the phone or laptop itself: phones keep a
+plain `<audio>` element playing with the screen locked or another app open
+(and over Bluetooth), which they don't do for embedded YouTube videos. It
+passes `Range` requests through, so seeking works, and looks the song up again
+when YouTube's link has expired.
 
 `appshome serve` downloads yt-dlp from its official GitHub release into
 `<data>/tools`, checks the published SHA-256 sum, and updates it daily. It runs

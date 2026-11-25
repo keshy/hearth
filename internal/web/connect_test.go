@@ -10,9 +10,11 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"appshome/internal/caddy"
 	"appshome/internal/config"
+	"appshome/internal/connect"
 	"appshome/internal/deploy"
 	"appshome/internal/registry"
 )
@@ -45,6 +47,46 @@ func connectReq(s *Server, method, app, path, body string, header map[string]str
 	w := httptest.NewRecorder()
 	s.Handler().ServeHTTP(w, r)
 	return w
+}
+
+func TestConnectAudioRelay(t *testing.T) {
+	song := strings.Repeat("aac-frames-", 1000)
+	refused := false
+	yt := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/expired" {
+			refused = true
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		http.ServeContent(w, r, "song", time.Time{}, strings.NewReader(song))
+	}))
+	defer yt.Close()
+
+	s := connectServer(t)
+	tools := connect.NewTools(t.TempDir())
+	s.SetConnect(&connect.Hub{Tools: tools})
+	tools.Remember("AzTnnAfiqMg", yt.URL+"/song", "audio/mp4", time.Now().Add(time.Hour))
+
+	if w := connectReq(s, http.MethodGet, "groceries", "/_api/connect/audio/AzTnnAfiqMg", "", nil); w.Code != http.StatusForbidden {
+		t.Fatalf("no capability: %d", w.Code)
+	}
+	if w := connectReq(s, http.MethodGet, "naal", "/_api/connect/audio/not-an-id", "", nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("bad id: %d", w.Code)
+	}
+	w := connectReq(s, http.MethodGet, "naal", "/_api/connect/audio/AzTnnAfiqMg", "", nil)
+	if w.Code != http.StatusOK || w.Body.String() != song || w.Header().Get("Content-Type") != "audio/mp4" {
+		t.Fatalf("whole song: %d %q", w.Code, w.Header())
+	}
+	w = connectReq(s, http.MethodGet, "naal", "/_api/connect/audio/AzTnnAfiqMg", "", map[string]string{"Range": "bytes=11-21"})
+	if w.Code != http.StatusPartialContent || w.Body.String() != "aac-frames-" || !strings.HasPrefix(w.Header().Get("Content-Range"), "bytes 11-21/") {
+		t.Fatalf("range: %d %q %q", w.Code, w.Body.String(), w.Header().Get("Content-Range"))
+	}
+
+	// An expired link is dropped and looked up again (which fails here: no yt-dlp).
+	tools.Remember("-nYayP5B5U0", yt.URL+"/expired", "audio/mp4", time.Now().Add(time.Hour))
+	if w := connectReq(s, http.MethodGet, "naal", "/_api/connect/audio/-nYayP5B5U0", "", nil); w.Code != http.StatusBadGateway || !refused {
+		t.Fatalf("expired: %d", w.Code)
+	}
 }
 
 func TestConnectNeedsCapability(t *testing.T) {

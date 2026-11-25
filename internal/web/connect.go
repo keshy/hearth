@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"regexp"
 
 	"appshome/internal/connect"
 	"appshome/internal/registry"
@@ -27,6 +28,65 @@ func (s *Server) connectApp(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	return true
+}
+
+var videoIDRE = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
+
+var audioHeaders = []string{"Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "Last-Modified", "ETag"}
+
+// connectAudio relays a song's audio to the browser, so the page can play
+// it in a plain <audio> element. Phones keep those going with the screen
+// locked or another app open (over Bluetooth too), which they don't do for
+// embedded YouTube videos. Range requests pass through, so seeking works.
+func (s *Server) connectAudio(w http.ResponseWriter, r *http.Request) {
+	if !s.connectApp(w, r) {
+		return
+	}
+	id := r.PathValue("video")
+	if !videoIDRE.MatchString(id) {
+		writeErr(w, http.StatusBadRequest, "not a YouTube video id")
+		return
+	}
+	for try := 0; try < 2; try++ {
+		u, ct, err := s.connect.Tools.Resolve(r.Context(), id)
+		if err != nil {
+			writeErr(w, http.StatusBadGateway, err.Error())
+			return
+		}
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, u, nil)
+		if err != nil {
+			writeErr(w, http.StatusBadGateway, err.Error())
+			return
+		}
+		if rg := r.Header.Get("Range"); rg != "" {
+			req.Header.Set("Range", rg)
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			writeErr(w, http.StatusBadGateway, err.Error())
+			return
+		}
+		// An expired or refused link: look the song up again once.
+		if res.StatusCode == http.StatusForbidden || res.StatusCode == http.StatusGone || res.StatusCode == http.StatusNotFound {
+			res.Body.Close()
+			s.connect.Tools.Forget(id)
+			continue
+		}
+		defer res.Body.Close()
+		for _, h := range audioHeaders {
+			if v := res.Header.Get(h); v != "" {
+				w.Header().Set(h, v)
+			}
+		}
+		if res.StatusCode < 300 {
+			w.Header().Set("Content-Type", ct)
+		}
+		w.Header().Set("Cache-Control", "private, max-age=3600")
+		w.WriteHeader(res.StatusCode)
+		io.Copy(w, res.Body)
+		return
+	}
+	writeErr(w, http.StatusBadGateway, "YouTube wouldn't hand over this song")
 }
 
 // connectDevices lists speakers and TVs; ?fresh=1 looks around again.
